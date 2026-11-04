@@ -1,0 +1,60 @@
+{
+  "name": "lld-studio",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Learn Low-Level Design: UML, SOLID and design patterns with animations, Python and Scala examples. Fully static, runs in the browser.",
+  "license": "MIT",
+  "author": "Uma Shanker Guda (https://www.linkedin.com/in/guda-uma-shanker/)",
+  "homepage": "https://github.com/guda249/lld-studio#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/guda249/lld-studio.git"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "build:standalone": "tsc --noEmit && vite build --config vite.standalone.config.ts && node scripts/inline-prototype-deps.mjs",
+    "test": "node scripts/run-tests.mjs",
+    "check:scala": "node scripts/check-scala.mjs"
+  },
+  "dependencies": {
+    "@codemirror/autocomplete": "6.20.4",
+    "@codemirror/commands": "6.11.1",
+    "@codemirror/lang-python": "6.2.1",
+    "@codemirror/language": "6.13.1",
+    "@codemirror/legacy-modes": "6.5.5",
+    "@codemirror/search": "6.7.2",
+    "@codemirror/state": "6.7.6",
+    "@codemirror/view": "6.43.15",
+    "@fontsource/ibm-plex-mono": "5.3.0",
+    "@fontsource/ibm-plex-sans": "5.3.0",
+    "@lezer/common": "1.5.3",
+    "@lezer/highlight": "1.2.4",
+    "@lezer/lr": "1.4.11",
+    "fflate": "0.8.3",
+    "gsap": "3.12.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-router-dom": "7.18.4",
+    "web-tree-sitter": "0.22.6"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "@vitejs/plugin-react": "4.7.0",
+    "typescript": "5.6.3",
+    "vite": "6.4.5",
+    "vite-plugin-singlefile": "2.3.3"
+  },
+  "overrides": {
+    "@lezer/common": "1.5.3",
+    "@lezer/lr": "1.4.11",
+    "@lezer/highlight": "1.2.4"
+  }
+}

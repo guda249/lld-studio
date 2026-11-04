@@ -1,0 +1,82 @@
+/* Design tokens: one source of truth for colours, used by every page and component.
+   UML element colours use the Okabe-Ito colour-blind-safe palette (see docs/design-system.md). */
+:root {
+  color-scheme: light;
+  --bg: #F6F7F9; --surface: #FFFFFF; --ink: #14181F; --muted: #545D6B; --line: #E3E6EB;
+  --accent: #3730A3; --accent-ink: #FFFFFF; --accent-soft: #EEF0FF;
+  --code-bg: #14181F; --code-ink: #E6E9EF; --code-dim: #7A8394;
+
+  /* UML element colours */
+  --uml-iface: #0072B2; --uml-iface-bg: #E1EEF7;
+  --uml-abstract: #CC79A7; --uml-abstract-bg: #F7E8F0;
+  --uml-concrete: #009E73; --uml-concrete-bg: #E0F3EC;
+  --uml-object: #56B4E9; --uml-object-bg: #E6F4FB;
+  --uml-enum: #B8A800; --uml-enum-bg: #FCF9D9;
+  --uml-client: #8A8F98; --uml-client-bg: #F0F0F0;
+  --uml-key: #E69F00;
+
+  /* category chips (navigation only, never inside UML) */
+  --cat-creational: #9A4A06; --cat-creational-bg: #FDF1E4;
+  --cat-structural: #0F6B64; --cat-structural-bg: #E3F4F2;
+  --cat-behavioral: #5B21B6; --cat-behavioral-bg: #F1EAFE;
+  --cat-concurrency: #9F1239; --cat-concurrency-bg: #FDE8EE;
+
+  --warn: #D55E00; --warn-bg: #FDF0EA; --warn-ink: #A33F00;
+  --ok: #0B6B3A; --ok-bg: #E3F5EA;
+
+  /* animation stage */
+  --stage-bg: #FAFBFC; --dot: #DDE1E6; --stroke: #14181F;
+  --token-bg: #3730A3; --result-bg: #0B6B3A; --token-ink: #FFFFFF;
+  --hl-bg: #3A3320; --hl-bar: #E69F00;
+  --iface-ink: #0B4F7C; --abstract-ink: #8A3D66; --key-ink: #8A5A00;
+
+  --radius: 14px;
+  --font: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0F1217; --surface: #171B22; --ink: #E8EBF0; --muted: #A3AAB6; --line: #2A303A;
+    --accent: #A5ACFF; --accent-ink: #14181F; --accent-soft: #252A4A;
+    --code-bg: #0B0D11;
+    --uml-iface: #4AA3DF; --uml-iface-bg: #10293B;
+    --uml-concrete: #2FBF8F; --uml-concrete-bg: #0E2E25;
+    --uml-client-bg: #22262D;
+    --cat-creational: #F2B66D; --cat-creational-bg: #3A2A16;
+    --cat-structural: #5FD3C6; --cat-structural-bg: #0F2E2B;
+    --cat-behavioral: #C4A6FF; --cat-behavioral-bg: #2A1F45;
+  --cat-concurrency: #FF9DB5; --cat-concurrency-bg: #3A1622;
+    --cat-concurrency: #FF9DB5; --cat-concurrency-bg: #3A1622;
+    --warn: #F07A3A; --warn-bg: #3A2116; --warn-ink: #FFB38A;
+    --ok: #4CC38A; --ok-bg: #12301F;
+    --stage-bg: #12161C; --dot: #232831; --stroke: #C9CED6;
+    --token-bg: #5B54E0; --result-bg: #138A50;
+    --iface-ink: #9CCDF0; --abstract-ink: #E7B3D0; --key-ink: #F2B66D;
+    --uml-abstract: #D99BC0; --uml-abstract-bg: #33202B;
+    --uml-object: #7CC6F0; --uml-object-bg: #12293A;
+    --uml-enum: #D9C833; --uml-enum-bg: #2E2B10;
+    --uml-client: #8A8F98;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0F1217; --surface: #171B22; --ink: #E8EBF0; --muted: #A3AAB6; --line: #2A303A;
+  --accent: #A5ACFF; --accent-ink: #14181F; --accent-soft: #252A4A;
+  --code-bg: #0B0D11;
+  --uml-iface: #4AA3DF; --uml-iface-bg: #10293B;
+  --uml-concrete: #2FBF8F; --uml-concrete-bg: #0E2E25;
+  --uml-client-bg: #22262D;
+  --cat-creational: #F2B66D; --cat-creational-bg: #3A2A16;
+  --cat-structural: #5FD3C6; --cat-structural-bg: #0F2E2B;
+  --cat-behavioral: #C4A6FF; --cat-behavioral-bg: #2A1F45;
+  --warn: #F07A3A; --warn-bg: #3A2116; --warn-ink: #FFB38A;
+  --ok: #4CC38A; --ok-bg: #12301F;
+  --stage-bg: #12161C; --dot: #232831; --stroke: #C9CED6;
+  --token-bg: #5B54E0; --result-bg: #138A50;
+  --iface-ink: #9CCDF0; --abstract-ink: #E7B3D0; --key-ink: #F2B66D;
+  --uml-abstract: #D99BC0; --uml-abstract-bg: #33202B;
+  --uml-object: #7CC6F0; --uml-object-bg: #12293A;
+  --uml-enum: #D9C833; --uml-enum-bg: #2E2B10;
+  --uml-client: #8A8F98;
+}

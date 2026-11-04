@@ -1,0 +1,702 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quiz and flashcards — Strategy (sample)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #F6F7F9; --surface: #FFFFFF; --ink: #14181F; --muted: #545D6B; --line: #E3E6EB;
+    --accent: #3730A3; --accent-ink: #FFFFFF; --accent-soft: #EEF0FF;
+    --code-bg: #14181F; --code-ink: #E6E9EF; --code-dim: #7A8394;
+    --iface: #0072B2; --iface-bg: #E1EEF7; --concrete: #009E73; --concrete-bg: #E0F3EC; --key: #E69F00;
+    --warn: #D55E00; --warn-bg: #FDF0EA; --warn-ink: #A33F00;
+    --ok: #0B6B3A; --ok-bg: #E3F5EA;
+    --stroke: #14181F;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0F1217; --surface: #171B22; --ink: #E8EBF0; --muted: #A3AAB6; --line: #2A303A;
+      --accent: #A5ACFF; --accent-ink: #14181F; --accent-soft: #252A4A;
+      --code-bg: #0B0D11;
+      --iface: #4AA3DF; --iface-bg: #10293B; --concrete: #2FBF8F; --concrete-bg: #0E2E25;
+      --warn: #F07A3A; --warn-bg: #3A2116; --warn-ink: #FFB38A;
+      --ok: #4CC38A; --ok-bg: #12301F; --stroke: #C9CED6;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0F1217; --surface: #171B22; --ink: #E8EBF0; --muted: #A3AAB6; --line: #2A303A;
+    --accent: #A5ACFF; --accent-ink: #14181F; --accent-soft: #252A4A;
+    --code-bg: #0B0D11;
+    --iface: #4AA3DF; --iface-bg: #10293B; --concrete: #2FBF8F; --concrete-bg: #0E2E25;
+    --warn: #F07A3A; --warn-bg: #3A2116; --warn-ink: #FFB38A;
+    --ok: #4CC38A; --ok-bg: #12301F; --stroke: #C9CED6;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 16px; line-height: 1.5; }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  code { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: .92em; }
+
+  .top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; padding: 14px 24px; background: var(--surface); border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
+  .crumb { color: var(--muted); font-size: 14px; }
+  .sample-tag { margin-left: auto; font-size: 13px; font-weight: 600; color: var(--warn-ink); background: var(--warn-bg); padding: 6px 12px; border-radius: 99px; }
+
+  .wrap { max-width: 920px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+  .title-row h1 { margin: 0; font-size: 32px; line-height: 1.15; }
+  .title-row p { margin: 6px 0 0; color: var(--muted); font-size: 17px; }
+  .view-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
+  .view-tab { height: 48px; padding: 0 18px; border: 0; background: none; cursor: pointer; font-weight: 600; color: var(--muted); border-bottom: 3px solid transparent; margin-bottom: -1px; }
+  .view-tab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+  .btn { height: 44px; min-width: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 500; }
+  .btn:hover:not(:disabled) { border-color: var(--muted); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .btn.link { border: 0; background: none; color: var(--accent); font-weight: 600; padding: 0 6px; }
+
+  /* quiz */
+  .quiz { padding: 22px; display: flex; flex-direction: column; gap: 16px; }
+  .q-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+  .q-count { font-size: 14px; color: var(--muted); }
+  .q-tag { font-size: 13px; font-weight: 600; padding: 5px 12px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); }
+  .q-bar { display: flex; gap: 5px; }
+  .q-bar span { flex: 1; height: 6px; border-radius: 99px; background: var(--line); }
+  .q-bar span.right { background: var(--ok); }
+  .q-bar span.wrong { background: var(--warn); }
+  .q-bar span.now { background: var(--accent); }
+  .q-prompt { margin: 0; font-size: 20px; font-weight: 600; line-height: 1.35; }
+  .options { display: grid; gap: 10px; }
+  .opt {
+    display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: center; gap: 12px; text-align: left;
+    min-height: 56px; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); cursor: pointer;
+  }
+  .opt .k { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; color: var(--muted); }
+  .opt:hover:not(:disabled) { border-color: var(--muted); }
+  .opt[aria-checked="true"] { border: 2px solid var(--accent); padding: 9px 13px; background: var(--accent-soft); }
+  .opt[aria-checked="true"] .k { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .opt.right { border: 2px solid var(--ok); background: var(--ok-bg); padding: 9px 13px; }
+  .opt.wrong { border: 2px solid var(--warn); background: var(--warn-bg); padding: 9px 13px; }
+  .opt:disabled { cursor: default; }
+  .diagrams { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 720px) { .diagrams { grid-template-columns: minmax(0, 1fr); } }
+  .diagrams .opt { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 6px; }
+  .diagrams svg { width: 100%; max-width: 280px; height: auto; display: block; }
+  .d-box { fill: var(--surface); stroke: var(--concrete); stroke-width: 1.5; }
+  .d-iface { fill: var(--iface-bg); stroke: var(--iface); stroke-width: 1.5; }
+  .d-key { fill: var(--concrete-bg); stroke: var(--key); stroke-width: 2; }
+  .d-t { fill: var(--ink); font-size: 10.5px; font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+  .d-s { fill: var(--muted); font-size: 8.5px; font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+  .d-l { stroke: var(--stroke); stroke-width: 1.6; fill: none; }
+  .d-tri { fill: var(--surface); stroke: var(--stroke); stroke-width: 1.6; }
+  .d-dia { fill: var(--stroke); stroke: var(--stroke); stroke-width: 1.6; }
+
+  .code { margin: 0; background: var(--code-bg); color: var(--code-ink); font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 14px; line-height: 1.7; padding: 10px 0; overflow-x: auto; border-radius: 12px; }
+  .ln { display: block; padding: 0 14px 0 0; white-space: pre; }
+  .ln .n { display: inline-block; width: 3.2em; padding-right: 1em; text-align: right; color: var(--code-dim); user-select: none; }
+  button.ln { width: 100%; text-align: left; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; min-height: 32px; border-left: 4px solid transparent; }
+  button.ln:hover:not(:disabled) { background: #232A36; }
+  button.ln[aria-pressed="true"] { background: #2E3266; border-left-color: #A5ACFF; }
+  button.ln.right { background: #12301F; border-left-color: #4CC38A; }
+  button.ln.wrong { background: #3A2116; border-left-color: #F07A3A; }
+  button.ln:disabled { cursor: default; }
+  .cm { color: #9AA3B2; font-style: italic; } .kw { color: #C792EA; font-weight: 500; } .ty { color: #FFCB6B; }
+  .fn { color: #82AAFF; } .st { color: #C3E88D; } .nu { color: #F78C6C; } .dc { color: #89DDFF; } .sf { color: #F07178; font-style: italic; }
+
+  .order-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+  @media (max-width: 720px) { .order-wrap { grid-template-columns: minmax(0, 1fr); } }
+  .order-wrap h3 { margin: 0 0 8px; font-size: 14px; color: var(--muted); }
+  .pool, .placed { display: flex; flex-direction: column; gap: 8px; min-height: 120px; }
+  .placed { border: 2px dashed var(--line); border-radius: 12px; padding: 8px; }
+  .chip-step { min-height: 48px; text-align: left; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; display: flex; gap: 10px; align-items: center; }
+  .chip-step .num { width: 26px; height: 26px; flex: none; border-radius: 99px; background: var(--accent); color: var(--accent-ink); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+  .chip-step.right { border: 2px solid var(--ok); background: var(--ok-bg); }
+  .chip-step.wrong { border: 2px solid var(--warn); background: var(--warn-bg); }
+  .chip-step:disabled { cursor: default; }
+  .empty-note { color: var(--muted); font-size: 14px; padding: 8px; }
+
+  .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .actions .spacer { flex: 1; }
+  .hint { border-radius: 10px; padding: 10px 14px; background: var(--bg); border: 1px solid var(--line); }
+  .feedback { border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+  .feedback.ok { background: var(--ok-bg); }
+  .feedback.bad { background: var(--warn-bg); }
+  .feedback .verdict { font-weight: 700; font-size: 17px; }
+  .feedback.ok .verdict { color: var(--ok); }
+  .feedback.bad .verdict { color: var(--warn-ink); }
+  .kbd { font-size: 13px; color: var(--muted); }
+
+  .results { padding: 22px; display: flex; flex-direction: column; gap: 16px; }
+  .score-big { font-size: 48px; font-weight: 700; line-height: 1; }
+  .res-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .res-list li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 10px; background: var(--bg); }
+  .res-list .mark { font-weight: 700; }
+  .res-list .mark.ok { color: var(--ok); } .res-list .mark.bad { color: var(--warn-ink); }
+  .res-list .tg { font-size: 13px; color: var(--muted); display: block; }
+  .toast { border-radius: 10px; padding: 10px 14px; background: var(--ok-bg); color: var(--ok); font-weight: 600; }
+
+  /* flashcards */
+  .deck-stats { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; color: var(--muted); }
+  .deck-stats strong { color: var(--ink); }
+  .fc-scene { perspective: 1400px; }
+  .fc-inner { display: grid; transition: transform .55s cubic-bezier(.3,.7,.2,1); transform-style: preserve-3d; }
+  .fc-inner.flipped { transform: rotateY(180deg); }
+  .fc-face { grid-area: 1 / 1; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); padding: 26px; min-height: 300px; display: flex; flex-direction: column; gap: 14px; }
+  .fc-back { transform: rotateY(180deg); background: var(--accent-soft); border-color: var(--accent); }
+  .fc-kicker { font-size: 13px; color: var(--muted); }
+  .fc-text { margin: 0; font-size: 22px; font-weight: 600; line-height: 1.35; }
+  .fc-answer { margin: 0; font-size: 19px; line-height: 1.5; }
+  .fc-face .grow { flex: 1; }
+  .ratings { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  @media (max-width: 560px) { .ratings { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .rate { min-height: 60px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-weight: 600; }
+  .rate small { font-weight: 400; font-size: 13px; color: var(--muted); }
+  .rate.again { color: var(--warn-ink); } .rate.easy { color: var(--ok); }
+  .rate:hover { border-color: var(--muted); }
+  .done-box { padding: 26px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fc-inner { transition: none; transform: none !important; }
+    .fc-face { backface-visibility: visible; transform: none; }
+    .fc-inner:not(.flipped) .fc-back, .fc-inner.flipped .fc-front { display: none; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 9h18M3 15h18"></path></svg>
+    LLD Studio
+  </div>
+  <nav class="crumb" aria-label="Breadcrumb">Patterns / Behavioral / Strategy / Check yourself</nav>
+  <span class="sample-tag">Sample for review</span>
+</header>
+
+<main class="wrap">
+  <div class="title-row">
+    <h1>Check yourself: Strategy</h1>
+    <p>A short quiz after the lesson, and flashcards that come back just before you'd forget.</p>
+  </div>
+
+  <div class="view-tabs" role="tablist" aria-label="Mode">
+    <button class="view-tab" role="tab" type="button" id="tabQuiz" aria-selected="true" aria-controls="quizPanel">Quiz</button>
+    <button class="view-tab" role="tab" type="button" id="tabCards" aria-selected="false" aria-controls="cardsPanel" tabindex="-1">Flashcards <span id="dueBadge"></span></button>
+  </div>
+
+  <section id="quizPanel" role="tabpanel" aria-labelledby="tabQuiz">
+    <div class="card quiz" id="quizCard">
+      <div class="q-top">
+        <span class="q-count" id="qCount"></span>
+        <span class="q-tag" id="qTag"></span>
+      </div>
+      <div class="q-bar" id="qBar" aria-hidden="true"></div>
+      <p class="q-prompt" id="qPrompt"></p>
+      <div id="qBody"></div>
+      <div class="hint" id="qHint" hidden></div>
+      <div class="feedback" id="qFeedback" hidden aria-live="polite"></div>
+      <div class="actions">
+        <button class="btn" id="qHintBtn" type="button">Show a hint</button>
+        <span class="spacer"></span>
+        <span class="kbd" id="qKeys"></span>
+        <button class="btn primary" id="qCheck" type="button" disabled>Check answer</button>
+        <button class="btn primary" id="qNext" type="button" hidden>Next question</button>
+      </div>
+    </div>
+    <div class="card results" id="results" hidden></div>
+  </section>
+
+  <section id="cardsPanel" role="tabpanel" aria-labelledby="tabCards" hidden style="display: flex; flex-direction: column; gap: 14px">
+    <div class="deck-stats" id="deckStats"></div>
+    <div id="fcArea"></div>
+    <div class="actions">
+      <span class="kbd">Keyboard: space shows the answer, 1–4 rate it.</span>
+      <span class="spacer"></span>
+      <button class="btn" id="fcReset" type="button">Reset this deck</button>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const escapeHtml = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  /* ---------- syntax colouring (same tolerant highlighter as the lessons) ---------- */
+  const KEYWORDS = {
+    py: new Set("and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield".split(" ")),
+    scala: new Set("abstract case catch class def do else enum extends extension final finally for given if implicit import lazy match new object override package private protected return sealed super then throw trait try type using val var while with yield".split(" "))
+  };
+  const LITERALS = new Set(["None", "True", "False", "true", "false", "null"]);
+  const TOKEN_RE = {
+    py: /(#.*$)|([rbfuRBFU]{0,2}(?:"""|'''))|([rbfuRBFU]{0,2}(?:"(?:[^"\\]|\\.)*(?:"|$)|'(?:[^'\\]|\\.)*(?:'|$)))|(@\w+)|(\b\d[\d_]*(?:\.\d+)?\b)|([A-Za-z_]\w*)/g,
+    scala: /(\/\/.*$)|(\/\*|[sfr]?""")|([sfr]?"(?:[^"\\]|\\.)*(?:"|$))|(@\w+)|(\b\d[\d_]*(?:\.\d+)?\b)|([A-Za-z_]\w*)/g
+  };
+  const span = (cls, text) => '<span class="' + cls + '">' + escapeHtml(text) + "</span>";
+  function highlightLines(lines, language) {
+    const kw = KEYWORDS[language];
+    let open = null;
+    return lines.map((line) => {
+      let out = "", pos = 0;
+      if (open) {
+        const end = line.indexOf(open.close);
+        if (end < 0) return span(open.cls, line);
+        out += span(open.cls, line.slice(0, end + open.close.length)); pos = end + open.close.length; open = null;
+      }
+      const re = new RegExp(TOKEN_RE[language].source, "g"); re.lastIndex = pos;
+      let last = pos, prev = "", m;
+      while ((m = re.exec(line)) !== null) {
+        out += escapeHtml(line.slice(last, m.index));
+        const s = m[0];
+        if (m[2]) {
+          const close = s.endsWith("/*") ? "*/" : s.slice(-3), cls = close === "*/" ? "cm" : "st";
+          const end = line.indexOf(close, re.lastIndex);
+          if (end < 0) { out += span(cls, line.slice(m.index)); open = { close, cls }; last = line.length; break; }
+          out += span(cls, line.slice(m.index, end + close.length)); re.lastIndex = last = end + close.length; prev = ""; continue;
+        }
+        let cls = null;
+        if (m[1]) cls = "cm"; else if (m[3]) cls = "st"; else if (m[4]) cls = "dc"; else if (m[5]) cls = "nu";
+        else if (kw.has(s)) cls = "kw"; else if (LITERALS.has(s)) cls = "nu";
+        else if (s === "self" || s === "this") cls = "sf"; else if (prev === "def") cls = "fn"; else if (/^[A-Z]/.test(s)) cls = "ty";
+        prev = m[6] ? s : "";
+        out += cls ? span(cls, s) : escapeHtml(s); last = re.lastIndex;
+      }
+      return out + escapeHtml(line.slice(last));
+    });
+  }
+  function codeHtml(text, language) {
+    const lines = text.split("\n"), col = highlightLines(lines, language);
+    return lines.map((l, i) => '<span class="ln"><span class="n">' + (i + 1) + "</span>" + (col[i] || " ") + "</span>").join("");
+  }
+
+  /* ---------- small UML diagrams for the diagram question (dashed lines start at the arrowhead) ---------- */
+  const DIAGRAMS = [
+    // A: correct Strategy
+    '<svg viewBox="0 0 260 150" role="img" aria-label="Checkout points to the PaymentMethod interface; CardPayment and UpiPayment implement it">' +
+      '<rect x="8" y="12" width="88" height="30" rx="6" class="d-key"></rect><text x="52" y="31" text-anchor="middle" class="d-t">Checkout</text>' +
+      '<line x1="96" y1="27" x2="150" y2="27" class="d-l"></line><polyline points="143,22 150,27 143,32" class="d-l"></polyline>' +
+      '<rect x="150" y="8" width="102" height="38" rx="6" class="d-iface"></rect><text x="201" y="22" text-anchor="middle" class="d-s">«interface»</text><text x="201" y="37" text-anchor="middle" class="d-t">PaymentMethod</text>' +
+      '<polygon points="195,58 207,58 201,46" class="d-tri"></polygon>' +
+      '<line x1="201" y1="58" x2="201" y2="86" class="d-l" stroke-dasharray="5 4"></line>' +
+      '<line x1="201" y1="86" x2="172" y2="86" class="d-l" stroke-dasharray="5 4"></line><line x1="201" y1="86" x2="230" y2="86" class="d-l" stroke-dasharray="5 4"></line>' +
+      '<line x1="172" y1="86" x2="172" y2="104" class="d-l" stroke-dasharray="5 4"></line><line x1="230" y1="86" x2="230" y2="104" class="d-l" stroke-dasharray="5 4"></line>' +
+      '<rect x="138" y="104" width="68" height="28" rx="6" class="d-box"></rect><text x="172" y="122" text-anchor="middle" class="d-t">Card</text>' +
+      '<rect x="212" y="104" width="44" height="28" rx="6" class="d-box"></rect><text x="234" y="122" text-anchor="middle" class="d-t">UPI</text>' +
+    "</svg>",
+    // B: Checkout depends on a concrete class; UPI inherits from Card
+    '<svg viewBox="0 0 260 150" role="img" aria-label="Checkout points directly to CardPayment; UpiPayment inherits from CardPayment">' +
+      '<rect x="8" y="12" width="88" height="30" rx="6" class="d-key"></rect><text x="52" y="31" text-anchor="middle" class="d-t">Checkout</text>' +
+      '<line x1="96" y1="27" x2="150" y2="27" class="d-l"></line><polyline points="143,22 150,27 143,32" class="d-l"></polyline>' +
+      '<rect x="150" y="12" width="102" height="30" rx="6" class="d-box"></rect><text x="201" y="31" text-anchor="middle" class="d-t">CardPayment</text>' +
+      '<polygon points="195,54 207,54 201,42" class="d-tri"></polygon><line x1="201" y1="54" x2="201" y2="104" class="d-l"></line>' +
+      '<rect x="150" y="104" width="102" height="28" rx="6" class="d-box"></rect><text x="201" y="122" text-anchor="middle" class="d-t">UpiPayment</text>' +
+    "</svg>",
+    // C: Checkout owns every algorithm (composition of both)
+    '<svg viewBox="0 0 260 150" role="img" aria-label="Checkout owns both CardPayment and UpiPayment through composition">' +
+      '<rect x="86" y="10" width="88" height="30" rx="6" class="d-key"></rect><text x="130" y="29" text-anchor="middle" class="d-t">Checkout</text>' +
+      '<polygon points="112,40 108,47 112,54 116,47" class="d-dia"></polygon><line x1="112" y1="54" x2="62" y2="104" class="d-l"></line>' +
+      '<polygon points="148,40 144,47 148,54 152,47" class="d-dia"></polygon><line x1="148" y1="54" x2="198" y2="104" class="d-l"></line>' +
+      '<rect x="12" y="104" width="100" height="28" rx="6" class="d-box"></rect><text x="62" y="122" text-anchor="middle" class="d-t">CardPayment</text>' +
+      '<rect x="148" y="104" width="100" height="28" rx="6" class="d-box"></rect><text x="198" y="122" text-anchor="middle" class="d-t">UpiPayment</text>' +
+    "</svg>"
+  ];
+
+  /* ---------- quiz content ---------- */
+  const QUIZ = [
+    { type: "mcq", tag: "Concept", prompt: "What problem does the Strategy pattern solve?",
+      options: ["Creating objects without naming their concrete classes",
+                "Swapping an algorithm at runtime without changing the code that uses it",
+                "Adding behaviour to an object by wrapping it",
+                "Notifying many objects when one of them changes"],
+      answer: 1, hint: "Think of the payment example: what changes between card, UPI and wallet, and what stays the same?",
+      explain: "Strategy puts each algorithm behind one interface, so the code that uses it (Checkout) never changes when you swap or add one. The other options describe Factory Method, Decorator and Observer." },
+    { type: "bug", tag: "Find the problem", lang: "py", prompt: "Tap the line that stops this from being a proper Strategy.",
+      code: `class Checkout:
+    def __init__(self):
+        self._method = CardPayment()
+
+    def pay(self, amount: float) -> str:
+        return self._method.pay(amount)`,
+      answer: 3, hint: "Which line decides the algorithm, and who should be making that decision?",
+      explain: "Line 3 creates CardPayment inside Checkout, so Checkout is locked to one algorithm. Accept a PaymentMethod in the constructor (or a setter) so the client can choose." },
+    { type: "mcq", tag: "Which pattern?", lang: "scala", prompt: "Which pattern does this Scala code use?",
+      code: `trait Discount:
+  def apply(total: BigDecimal): BigDecimal
+
+class FestiveSale extends Discount:
+  def apply(total: BigDecimal) = total * 0.9
+
+class Cart(var discount: Discount):
+  def checkout(total: BigDecimal) = discount.apply(total)`,
+      options: ["Strategy", "State", "Decorator", "Template Method"],
+      answer: 0, hint: "Who decides which Discount the Cart uses: the Cart itself, or someone outside?",
+      explain: "Cart holds a Discount and delegates to it, and any Discount can be plugged in from outside: Strategy. Nothing switches itself (State), nothing wraps another object (Decorator), and there is no fixed skeleton with overridable steps (Template Method)." },
+    { type: "mcq", tag: "Scenario", prompt: "An Order moves from placed to shipped to delivered, and \u201ccancel\u201d behaves differently at each stage. The order itself decides when to move on. Which pattern fits best?",
+      options: ["Strategy", "State", "Observer", "Command"],
+      answer: 1, hint: "Look at who changes the behaviour: the client, or the object itself as it moves through its life?",
+      explain: "The behaviour depends on the order's stage, and the order moves itself to the next stage: that's State. With Strategy, the client picks the algorithm from outside." },
+    { type: "order", tag: "Put in order", prompt: "Put the steps of checkout.pay(1200) in the right order.",
+      steps: ["App calls checkout.pay(1200)",
+              "Checkout forwards the call to its PaymentMethod",
+              "UpiPayment runs its own pay() algorithm",
+              "The result travels back to App"],
+      shuffled: [2, 0, 3, 1], hint: "Start with whoever triggers the call, and finish with whoever receives the answer.",
+      explain: "The client calls the context, the context delegates through the interface, the concrete strategy does the work, and the result comes back the same way." },
+    { type: "diagram", tag: "Read the diagram", prompt: "Which class diagram shows the Strategy pattern correctly?",
+      options: DIAGRAMS, answer: 0, hint: "In Strategy, the context should never point at a concrete class.",
+      explain: "A is right: Checkout points to the PaymentMethod interface, and the payments implement it (dashed line, hollow triangle). In B, Checkout depends on a concrete class and UPI wrongly inherits from Card. In C, Checkout owns every algorithm, which is the original if/elif problem." }
+  ];
+
+  /* ---------- quiz state ---------- */
+  let qi = 0, picked = null, placed = [], checked = false, hintUsed = false;
+  let results = [];               // { correct, hint }
+  let queue = QUIZ.map((_, i) => i);   // which questions this round asks
+
+  function renderBar() {
+    $("qBar").innerHTML = queue.map((qIndex, pos) => {
+      const r = results[pos];
+      const cls = r ? (r.correct ? "right" : "wrong") : pos === qi ? "now" : "";
+      return '<span class="' + cls + '"></span>';
+    }).join("");
+  }
+
+  function renderQuestion() {
+    const q = QUIZ[queue[qi]];
+    picked = null; placed = []; checked = false; hintUsed = false;
+    $("qCount").textContent = "Question " + (qi + 1) + " of " + queue.length;
+    $("qTag").textContent = q.tag;
+    $("qPrompt").textContent = q.prompt;
+    $("qHint").hidden = true; $("qHint").textContent = q.hint;
+    $("qHintBtn").hidden = false; $("qHintBtn").disabled = false;
+    $("qFeedback").hidden = true;
+    $("qCheck").hidden = false; $("qCheck").disabled = true;
+    $("qNext").hidden = true;
+    let html = "";
+    if (q.code && q.type !== "bug") html += '<pre class="code" tabindex="0" aria-label="Code">' + codeHtml(q.code, q.lang) + "</pre><div style=\"height: 12px\"></div>";
+    if (q.type === "mcq") {
+      html += '<div class="options" role="radiogroup" aria-label="Answers">' + q.options.map((o, i) =>
+        '<button type="button" class="opt" role="radio" aria-checked="false" data-i="' + i + '"><span class="k">' + (i + 1) + "</span><span>" + escapeHtml(o) + "</span></button>").join("") + "</div>";
+      $("qKeys").textContent = "Keys 1–" + q.options.length + " pick, Enter checks";
+    } else if (q.type === "diagram") {
+      html += '<div class="options diagrams" role="radiogroup" aria-label="Diagrams">' + q.options.map((svg, i) =>
+        '<button type="button" class="opt" role="radio" aria-checked="false" data-i="' + i + '"><span class="k">' + "ABC"[i] + "</span>" + svg + "</button>").join("") + "</div>";
+      $("qKeys").textContent = "Keys 1–3 pick, Enter checks";
+    } else if (q.type === "bug") {
+      const lines = q.code.split("\n"), col = highlightLines(lines, q.lang);
+      html += '<div class="code" role="group" aria-label="Tap a line">' + lines.map((l, i) => l.trim()
+        ? '<button type="button" class="ln" data-line="' + (i + 1) + '" aria-pressed="false" aria-label="Line ' + (i + 1) + ": " + escapeHtml(l.trim()) + '"><span class="n">' + (i + 1) + "</span>" + col[i] + "</button>"
+        : '<span class="ln"><span class="n">' + (i + 1) + "</span> </span>").join("") + "</div>";
+      $("qKeys").textContent = "Tap or tab to a line, then check";
+    } else if (q.type === "order") {
+      html += '<div class="order-wrap"><div><h3>Steps</h3><div class="pool" id="pool"></div></div>' +
+        '<div><h3>Your order (tap a step to take it back)</h3><div class="placed" id="placed"></div></div></div>';
+      $("qKeys").textContent = "Tap steps in the order they happen";
+    }
+    $("qBody").innerHTML = html;
+    if (q.type === "order") renderOrder();
+    renderBar();
+  }
+
+  function renderOrder() {
+    const q = QUIZ[queue[qi]];
+    const pool = q.shuffled.filter((s) => !placed.includes(s));
+    $("pool").innerHTML = pool.length ? pool.map((s) =>
+      '<button type="button" class="chip-step" data-s="' + s + '">' + escapeHtml(q.steps[s]) + "</button>").join("")
+      : '<span class="empty-note">All steps placed.</span>';
+    $("placed").innerHTML = placed.length ? placed.map((s, i) =>
+      '<button type="button" class="chip-step" data-p="' + i + '"' + (checked ? " disabled" : "") + '><span class="num">' + (i + 1) + "</span>" + escapeHtml(q.steps[s]) + "</button>").join("")
+      : '<span class="empty-note">Tap the first step on the left.</span>';
+    $("qCheck").disabled = placed.length !== q.steps.length;
+  }
+
+  function choose(i) {
+    if (checked) return;
+    picked = i;
+    document.querySelectorAll("#qBody .opt").forEach((b) => b.setAttribute("aria-checked", String(Number(b.dataset.i) === i)));
+    document.querySelectorAll("#qBody button.ln").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.line) === i)));
+    $("qCheck").disabled = false;
+  }
+
+  function check() {
+    if (checked) return;
+    const q = QUIZ[queue[qi]];
+    let correct;
+    if (q.type === "order") correct = placed.every((s, i) => s === i);
+    else correct = picked === q.answer;
+    checked = true;
+    results[qi] = { correct, hint: hintUsed };
+
+    if (q.type === "mcq" || q.type === "diagram") {
+      document.querySelectorAll("#qBody .opt").forEach((b) => {
+        const i = Number(b.dataset.i); b.disabled = true;
+        if (i === q.answer) b.classList.add("right"); else if (i === picked) b.classList.add("wrong");
+      });
+    } else if (q.type === "bug") {
+      document.querySelectorAll("#qBody button.ln").forEach((b) => {
+        const n = Number(b.dataset.line); b.disabled = true;
+        if (n === q.answer) b.classList.add("right"); else if (n === picked) b.classList.add("wrong");
+      });
+    } else if (q.type === "order") {
+      renderOrder();
+      document.querySelectorAll("#placed .chip-step").forEach((b, i) => b.classList.add(placed[i] === i ? "right" : "wrong"));
+      document.querySelectorAll("#pool .chip-step").forEach((b) => { b.disabled = true; });
+    }
+    const fb = $("qFeedback");
+    fb.className = "feedback " + (correct ? "ok" : "bad");
+    let extra = "";
+    if (!correct && q.type === "order") extra = '<div><strong>Correct order:</strong> ' + q.steps.map((s, i) => (i + 1) + ". " + escapeHtml(s)).join(" → ") + "</div>";
+    fb.innerHTML = '<span class="verdict">' + (correct ? (hintUsed ? "Correct, with a hint." : "Correct.") : "Not quite.") + "</span>" +
+      "<span>" + escapeHtml(q.explain) + "</span>" + extra +
+      '<a href="https://claude.ai/artifact/Ks4zvEtC7Y4F63MbvNnzh8" class="btn link" style="align-self: flex-start; height: 36px">See this in the lesson</a>';
+    fb.hidden = false;
+    $("qHintBtn").hidden = true;
+    $("qCheck").hidden = true;
+    $("qNext").hidden = false;
+    $("qNext").textContent = qi === queue.length - 1 ? "See results" : "Next question";
+    $("qKeys").textContent = "Enter for next";
+    renderBar();
+    $("qNext").focus();
+  }
+
+  function next() {
+    if (qi < queue.length - 1) { qi++; renderQuestion(); $("qPrompt").focus && $("qPrompt").setAttribute("tabindex", "-1"); $("qPrompt").focus(); return; }
+    showResults();
+  }
+
+  let addedToDeck = false;
+  function showResults() {
+    $("quizCard").hidden = true;
+    const box = $("results");
+    const correct = results.filter((r) => r.correct).length;
+    const missed = queue.filter((_, pos) => !results[pos].correct);
+    const msg = correct === queue.length ? "Excellent. You've got Strategy." : correct >= queue.length - 1 ? "Nearly there. Have a look at the one you missed." : "Worth another look at the lesson before moving on.";
+    box.innerHTML =
+      '<div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 20px">' +
+        '<span class="score-big">' + correct + " / " + queue.length + "</span>" +
+        '<span style="font-size: 18px; font-weight: 600">' + msg + "</span></div>" +
+      '<ul class="res-list">' + queue.map((qIndex, pos) => {
+        const q = QUIZ[qIndex], r = results[pos];
+        return '<li><span class="mark ' + (r.correct ? "ok" : "bad") + '" aria-label="' + (r.correct ? "correct" : "missed") + '">' + (r.correct ? "✓" : "✗") + "</span>" +
+          "<span>" + escapeHtml(q.prompt) + '<span class="tg">' + q.tag + (r.hint ? " · used a hint" : "") + "</span></span>" +
+          (r.correct ? "<span></span>" : '<a href="https://claude.ai/artifact/Ks4zvEtC7Y4F63MbvNnzh8" class="btn link" style="height: 36px">Review</a>') + "</li>";
+      }).join("") + "</ul>" +
+      '<div id="toast" class="toast" hidden></div>' +
+      '<div class="actions">' +
+        (missed.length ? '<button class="btn primary" id="rMissed" type="button">Retry the ' + missed.length + " missed</button>" +
+          '<button class="btn" id="rAdd" type="button"' + (addedToDeck ? " disabled" : "") + ">Add missed to flashcards</button>" : "") +
+        '<button class="btn" id="rAll" type="button">Retry all</button>' +
+        '<span class="spacer"></span>' +
+        '<button class="btn" id="rCards" type="button">Go to flashcards</button>' +
+      "</div>";
+    box.hidden = false;
+    box.setAttribute("tabindex", "-1"); box.focus();
+    if (missed.length) {
+      $("rMissed").addEventListener("click", () => startRound(missed));
+      $("rAdd").addEventListener("click", () => {
+        const added = addCards(missed.map((qIndex) => {
+          const q = QUIZ[qIndex];
+          return { id: "quiz-" + qIndex, front: q.prompt, back: q.explain, code: q.code || null, lang: q.lang || "py", src: "From your quiz" };
+        }));
+        addedToDeck = true; $("rAdd").disabled = true;
+        $("toast").textContent = added + " card" + (added === 1 ? "" : "s") + " added. They're due in your flashcards now.";
+        $("toast").hidden = false;
+      });
+    }
+    $("rAll").addEventListener("click", () => startRound(QUIZ.map((_, i) => i)));
+    $("rCards").addEventListener("click", () => setView("cards"));
+  }
+
+  function startRound(indices) {
+    queue = indices.slice(); qi = 0; results = []; addedToDeck = false;
+    $("results").hidden = true; $("quizCard").hidden = false;
+    renderQuestion();
+  }
+
+  /* ---------- flashcards with spaced repetition ---------- */
+  const BASE_CARDS = [
+    { id: "s-intent", front: "Strategy: what is its intent, in one line?", back: "Put interchangeable algorithms behind one interface, so the code that uses them can swap algorithms without changing." },
+    { id: "s-vs-state", front: "Strategy vs State: who switches the behaviour?", back: "Strategy: the client, from outside. State: the state objects switch themselves as the object moves through its life." },
+    { id: "s-solid", front: "Which SOLID principles does Strategy mainly apply?", back: "Open/Closed (add an algorithm without editing the context) and Dependency Inversion (the context depends on an interface)." },
+    { id: "s-spot", front: "Which pattern is hiding in this line?", code: "sorted(products, key=lambda p: p.price)", lang: "py", back: "Strategy. The key function is the algorithm, passed in from outside; swap it to sort a different way." },
+    { id: "uml-real", front: "UML: what does a dashed line with a hollow triangle mean?", back: "Realization: a class implements an interface (a trait in Scala, an abstract base class or Protocol in Python)." },
+    { id: "s-when-not", front: "When should you NOT use Strategy?", back: "When there are only two fixed options that will never grow. A plain if is clearer and has fewer classes." }
+  ];
+  const STORE_KEY = "lldstudio.flashcards.strategy.v1";
+  const DAY = 86400000;
+  let deck = loadDeck();
+  let session = [], fcFlipped = false;
+
+  function loadDeck() {
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); } catch (e) { saved = null; }
+    const cards = (saved && saved.cards) || BASE_CARDS.map((c) => Object.assign({}, c, { ivl: 0, ease: 2.5, due: 0, reps: 0 }));
+    return { cards };
+  }
+  function saveDeck() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(deck)); } catch (e) { /* storage may be unavailable; the session still works */ }
+  }
+  function addCards(newCards) {
+    let added = 0;
+    newCards.forEach((c) => {
+      if (deck.cards.some((d) => d.id === c.id)) return;
+      deck.cards.push(Object.assign({}, c, { ivl: 0, ease: 2.5, due: 0, reps: 0 }));
+      added++;
+    });
+    saveDeck(); buildSession(); renderCards();
+    return added;
+  }
+  const dueNow = () => deck.cards.filter((c) => c.due <= Date.now());
+  function buildSession() { session = dueNow().map((c) => c.id); fcFlipped = false; }
+
+  // simplified SM-2: returns the new interval in days (0 = again in this session)
+  function schedule(card, rating) {
+    let ivl = card.ivl, ease = card.ease;
+    if (rating === "again") { ivl = 0; ease = Math.max(1.3, ease - 0.2); }
+    else if (rating === "hard") { ivl = ivl === 0 ? 1 : Math.max(1, Math.round(ivl * 1.2)); ease = Math.max(1.3, ease - 0.15); }
+    else if (rating === "good") { ivl = ivl === 0 ? 3 : Math.round(ivl * ease); }
+    else if (rating === "easy") { ivl = ivl === 0 ? 7 : Math.round(ivl * ease * 1.3); ease = ease + 0.15; }
+    return { ivl, ease };
+  }
+  const fmt = (d) => d === 0 ? "again soon" : d === 1 ? "1 day" : d < 30 ? d + " days" : Math.round(d / 30) + " months";
+
+  function renderStats() {
+    const due = dueNow().length, total = deck.cards.length;
+    const next = deck.cards.filter((c) => c.due > Date.now()).sort((a, b) => a.due - b.due)[0];
+    $("deckStats").innerHTML = "<span><strong>" + session.length + "</strong> left in this session</span>" +
+      "<span><strong>" + due + "</strong> due of " + total + " cards</span>" +
+      (next ? "<span>Next review: <strong>" + new Date(next.due).toLocaleDateString(undefined, { day: "numeric", month: "short" }) + "</strong></span>" : "");
+    $("dueBadge").textContent = due ? "(" + due + ")" : "";
+  }
+
+  function renderCards() {
+    renderStats();
+    const area = $("fcArea");
+    if (!session.length) {
+      const next = deck.cards.filter((c) => c.due > Date.now()).sort((a, b) => a.due - b.due)[0];
+      area.innerHTML = '<div class="card done-box"><h2 style="margin: 0; font-size: 24px">All caught up</h2>' +
+        '<p style="margin: 0; color: var(--muted)">' + (next ? "The next card comes back on " + new Date(next.due).toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "short" }) + ". Reviewing just before you'd forget is what makes it stick." : "No cards yet.") + "</p>" +
+        '<button class="btn" id="fcAnyway" type="button">Review all cards anyway</button></div>';
+      $("fcAnyway").addEventListener("click", () => { session = deck.cards.map((c) => c.id); fcFlipped = false; renderCards(); });
+      return;
+    }
+    const card = deck.cards.find((c) => c.id === session[0]);
+    const previews = ["again", "hard", "good", "easy"].map((r) => fmt(schedule(card, r).ivl));
+    area.innerHTML =
+      '<div class="fc-scene"><div class="fc-inner' + (fcFlipped ? " flipped" : "") + '" id="fcInner">' +
+        '<div class="fc-face fc-front" aria-hidden="' + fcFlipped + '">' +
+          '<span class="fc-kicker">' + (card.src || "Strategy") + (card.reps ? " · reviewed " + card.reps + "×" : " · new") + "</span>" +
+          '<p class="fc-text">' + escapeHtml(card.front) + "</p>" +
+          (card.code ? '<pre class="code">' + codeHtml(card.code, card.lang || "py") + "</pre>" : "") +
+          '<span class="grow"></span>' +
+          '<button class="btn primary" id="fcShow" type="button" style="align-self: flex-start"' + (fcFlipped ? ' tabindex="-1"' : "") + ">Show answer</button>" +
+        "</div>" +
+        '<div class="fc-face fc-back" aria-hidden="' + !fcFlipped + '">' +
+          '<span class="fc-kicker">Answer</span>' +
+          '<p class="fc-text" style="font-size: 17px; color: var(--muted)">' + escapeHtml(card.front) + "</p>" +
+          '<p class="fc-answer">' + escapeHtml(card.back) + "</p>" +
+          '<span class="grow"></span>' +
+          '<div><div class="fc-kicker" style="margin-bottom: 8px">How well did you remember it?</div>' +
+          '<div class="ratings" role="group" aria-label="Rate your recall">' +
+            ["again", "hard", "good", "easy"].map((r, i) =>
+              '<button type="button" class="rate ' + r + '" data-r="' + r + '"' + (fcFlipped ? "" : ' tabindex="-1"') + ">" +
+              ["Again", "Hard", "Good", "Easy"][i] + " <small>" + (i + 1) + " · " + previews[i] + "</small></button>").join("") +
+          "</div></div>" +
+        "</div>" +
+      "</div></div>";
+    $("fcShow").addEventListener("click", flip);
+    area.querySelectorAll(".rate").forEach((b) => b.addEventListener("click", () => rate(b.dataset.r)));
+  }
+  function flip() {
+    if (!session.length || fcFlipped) return;
+    fcFlipped = true;
+    $("fcInner").classList.add("flipped");
+    document.querySelector(".fc-front").setAttribute("aria-hidden", "true");
+    document.querySelector(".fc-back").setAttribute("aria-hidden", "false");
+    $("fcShow").tabIndex = -1;
+    document.querySelectorAll(".rate").forEach((b) => b.removeAttribute("tabindex"));
+    setTimeout(() => { const g = document.querySelector(".rate.good"); if (g) g.focus(); }, reduceMotion ? 0 : 300);
+  }
+  function rate(r) {
+    if (!fcFlipped || !session.length) return;
+    const id = session.shift();
+    const card = deck.cards.find((c) => c.id === id);
+    const s = schedule(card, r);
+    card.ivl = s.ivl; card.ease = s.ease; card.reps += 1;
+    if (r === "again") { card.due = 0; session.push(id); }      // comes back later in this session
+    else card.due = Date.now() + s.ivl * DAY;
+    saveDeck();
+    fcFlipped = false;
+    renderCards();
+    const show = $("fcShow"); if (show) show.focus();
+  }
+  $("fcReset").addEventListener("click", () => {
+    deck = { cards: BASE_CARDS.map((c) => Object.assign({}, c, { ivl: 0, ease: 2.5, due: 0, reps: 0 })) };
+    saveDeck(); buildSession(); renderCards();
+  });
+
+  /* ---------- views and keyboard ---------- */
+  let view = "quiz";
+  function setView(v) {
+    view = v;
+    const quiz = v === "quiz";
+    $("tabQuiz").setAttribute("aria-selected", String(quiz)); $("tabCards").setAttribute("aria-selected", String(!quiz));
+    $("tabQuiz").tabIndex = quiz ? 0 : -1; $("tabCards").tabIndex = quiz ? -1 : 0;
+    $("quizPanel").hidden = !quiz; $("cardsPanel").hidden = quiz;
+    if (!quiz) { if (!session.length) buildSession(); renderCards(); }
+  }
+  $("tabQuiz").addEventListener("click", () => setView("quiz"));
+  $("tabCards").addEventListener("click", () => setView("cards"));
+
+  $("qBody").addEventListener("click", (e) => {
+    const q = QUIZ[queue[qi]];
+    const opt = e.target.closest(".opt"); if (opt) { choose(Number(opt.dataset.i)); return; }
+    const ln = e.target.closest("button.ln"); if (ln) { choose(Number(ln.dataset.line)); return; }
+    const chip = e.target.closest(".chip-step");
+    if (chip && !checked && q.type === "order") {
+      if (chip.dataset.s !== undefined) placed.push(Number(chip.dataset.s));
+      else placed.splice(Number(chip.dataset.p), 1);
+      renderOrder();
+    }
+  });
+  $("qCheck").addEventListener("click", check);
+  $("qNext").addEventListener("click", next);
+  $("qHintBtn").addEventListener("click", () => { hintUsed = true; $("qHint").hidden = false; $("qHintBtn").disabled = true; });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    if (view === "quiz" && !$("quizCard").hidden) {
+      const q = QUIZ[queue[qi]];
+      const n = Number(e.key);
+      if (!checked && (q.type === "mcq" || q.type === "diagram") && n >= 1 && n <= q.options.length) { e.preventDefault(); choose(n - 1); return; }
+      if (e.key === "Enter" && e.target.tagName !== "BUTTON" && e.target.tagName !== "A") {
+        if (!checked && !$("qCheck").disabled) { e.preventDefault(); check(); }
+        else if (checked) { e.preventDefault(); next(); }
+      }
+    } else if (view === "cards") {
+      if (e.key === " " && !fcFlipped && e.target.tagName !== "BUTTON") { e.preventDefault(); flip(); }
+      const n = Number(e.key);
+      if (fcFlipped && n >= 1 && n <= 4) { e.preventDefault(); rate(["again", "hard", "good", "easy"][n - 1]); }
+    }
+  });
+
+  buildSession();
+  renderStats();
+  renderQuestion();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,998 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>UML Basics — The six relationships (sample lesson)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #F6F7F9; --surface: #FFFFFF; --ink: #14181F; --muted: #545D6B; --line: #E3E6EB;
+    --accent: #3730A3; --accent-ink: #FFFFFF; --accent-soft: #EEF0FF;
+    --code-bg: #14181F; --code-ink: #E6E9EF; --code-dim: #7A8394; --hl-bg: #3A3320; --hl-bar: #E69F00;
+    --iface: #0072B2; --iface-bg: #E1EEF7; --iface-ink: #0B4F7C;
+    --concrete: #009E73; --concrete-bg: #E0F3EC;
+    --key: #E69F00; --key-ink: #8A5A00;
+    --warn: #D55E00; --warn-bg: #FDF0EA; --warn-ink: #A33F00;
+    --ok: #0B6B3A; --ok-bg: #E3F5EA;
+    --stage-bg: #FAFBFC; --dot: #DDE1E6; --stroke: #14181F;
+    --token-bg: #3730A3; --result-bg: #0B6B3A; --token-ink: #FFFFFF;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0F1217; --surface: #171B22; --ink: #E8EBF0; --muted: #A3AAB6; --line: #2A303A;
+      --accent: #A5ACFF; --accent-ink: #14181F; --accent-soft: #252A4A;
+      --code-bg: #0B0D11;
+      --iface: #4AA3DF; --iface-bg: #10293B; --iface-ink: #9CCDF0;
+      --concrete: #2FBF8F; --concrete-bg: #0E2E25;
+      --key-ink: #F2B66D;
+      --warn: #F07A3A; --warn-bg: #3A2116; --warn-ink: #FFB38A;
+      --ok: #4CC38A; --ok-bg: #12301F;
+      --stage-bg: #12161C; --dot: #232831; --stroke: #C9CED6;
+      --token-bg: #5B54E0; --result-bg: #138A50;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0F1217; --surface: #171B22; --ink: #E8EBF0; --muted: #A3AAB6; --line: #2A303A;
+    --accent: #A5ACFF; --accent-ink: #14181F; --accent-soft: #252A4A;
+    --code-bg: #0B0D11;
+    --iface: #4AA3DF; --iface-bg: #10293B; --iface-ink: #9CCDF0;
+    --concrete: #2FBF8F; --concrete-bg: #0E2E25;
+    --key-ink: #F2B66D;
+    --warn: #F07A3A; --warn-bg: #3A2116; --warn-ink: #FFB38A;
+    --ok: #4CC38A; --ok-bg: #12301F;
+    --stage-bg: #12161C; --dot: #232831; --stroke: #C9CED6;
+    --token-bg: #5B54E0; --result-bg: #138A50;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 16px; line-height: 1.5; }
+  button, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  code { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: .92em; }
+
+  .top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; padding: 14px 24px; background: var(--surface); border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
+  .crumb { color: var(--muted); font-size: 14px; }
+  .sample-tag { margin-left: auto; font-size: 13px; font-weight: 600; color: var(--key-ink); background: var(--warn-bg); padding: 6px 12px; border-radius: 99px; }
+
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+  .title-row .kicker { font-size: 14px; color: var(--muted); }
+  .title-row h1 { margin: 2px 0 0; font-size: 34px; line-height: 1.15; }
+  .title-row p { margin: 6px 0 0; color: var(--muted); font-size: 17px; max-width: 75ch; }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+  .lesson { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 18px; align-items: start; }
+  @media (max-width: 960px) { .lesson { grid-template-columns: minmax(0, 1fr); } }
+
+  .rel-list { padding: 10px; display: flex; flex-direction: column; gap: 4px; }
+  @media (max-width: 960px) { .rel-list { flex-direction: row; overflow-x: auto; } .rel-tab { flex: none; width: 200px; } }
+  .rel-tab {
+    display: grid; grid-template-columns: 52px minmax(0, 1fr); align-items: center; gap: 10px; text-align: left;
+    min-height: 56px; padding: 8px 10px; border: 1px solid transparent; border-radius: 10px; background: none; cursor: pointer;
+  }
+  .rel-tab:hover { background: var(--bg); }
+  .rel-tab[aria-selected="true"] { background: var(--accent-soft); border-color: var(--accent); }
+  .rel-tab .nm { font-weight: 600; display: block; }
+  .rel-tab .sh { font-size: 13px; color: var(--muted); display: block; }
+  .rel-tab svg { display: block; }
+  .rel-tab .done { color: var(--ok); font-weight: 700; }
+
+  .main { padding: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .rel-head { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+  .rel-head h2 { margin: 0; font-size: 24px; }
+  .notation { display: inline-flex; align-items: center; gap: 10px; font-size: 15px; color: var(--muted); }
+  .notation svg { flex: none; color: var(--ink); }
+  .stage {
+    border-radius: 12px; border: 1px solid var(--line); overflow-x: auto;
+    background-color: var(--stage-bg); background-image: radial-gradient(var(--dot) 1px, transparent 1px); background-size: 18px 18px;
+  }
+  .stage svg { display: block; width: 100%; min-width: 560px; height: auto; font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+  .t { fill: var(--ink); font-size: 13px; }
+  .nm-t { font-weight: 700; font-size: 15px; }
+  .small { font-size: 11.5px; }
+  .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12.5px; }
+  .muted { fill: var(--muted); }
+  .italic { font-style: italic; }
+  .iface-ink { fill: var(--iface-ink); }
+  .ok-ink { fill: var(--ok); font-weight: 600; }
+  .warn-ink { fill: var(--warn-ink); font-weight: 600; }
+  .lbl { fill: var(--accent); font-weight: 700; font-size: 14px; }
+  .fill-surface { fill: var(--surface); }
+  .band-concrete { fill: var(--concrete-bg); }
+  .band-iface { fill: var(--iface-bg); }
+  .frame-concrete { fill: none; stroke: var(--concrete); stroke-width: 2; }
+  .frame-iface { fill: none; stroke: var(--iface); stroke-width: 2; }
+  .div-concrete { stroke: var(--concrete); }
+  .div-iface { stroke: var(--iface); }
+  .member-hl { fill: var(--accent-soft); }
+  .rel { stroke: var(--stroke); stroke-width: 2.5; fill: none; }
+  .tri { fill: var(--surface); stroke: var(--stroke); stroke-width: 2.5; }
+  .dia-hollow { fill: var(--surface); stroke: var(--stroke); stroke-width: 2.5; }
+  .dia-filled { fill: var(--stroke); stroke: var(--stroke); stroke-width: 2.5; }
+  .xmark rect { fill: var(--warn-bg); opacity: .75; }
+  .xmark line { stroke: var(--warn); stroke-width: 4; stroke-linecap: round; }
+  .token rect { fill: var(--token-bg); }
+  .token.result rect { fill: var(--result-bg); }
+  .token text { fill: var(--token-ink); font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; font-weight: 500; }
+
+  .scale { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 12px; }
+  @media (max-width: 640px) { .scale { grid-template-columns: minmax(0, 1fr); } }
+  .scale h3 { margin: 0 0 6px; font-size: 13px; color: var(--muted); font-weight: 600; }
+  .seg-row { display: flex; gap: 4px; }
+  .seg { flex: 1; text-align: center; font-size: 12.5px; padding: 6px 4px; border-radius: 8px; background: var(--bg); color: var(--muted); border: 1px solid var(--line); transition: background .3s, color .3s; }
+  .seg.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  .seg-ends { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .btn { height: 44px; min-width: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 500; }
+  .btn:hover { border-color: var(--muted); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; min-width: 120px; }
+  .btn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .btn:disabled { opacity: .4; cursor: default; }
+  .controls select { height: 44px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); padding: 0 8px; max-width: 220px; }
+  .speed { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
+
+  .below { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; border-top: 1px solid var(--line); padding-top: 14px; }
+  .narration { flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+  .narration h3 { margin: 0 0 2px; font-size: 13px; color: var(--muted); font-weight: 600; }
+  .narration p { margin: 0; font-size: 16px; }
+  .narration .box { border-radius: 10px; padding: 10px 14px; }
+  .narration .what { background: var(--bg); }
+  .narration .spot { background: var(--concrete-bg); }
+  .narration .why { background: var(--accent-soft); }
+  .narration .speaking { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .code-card { flex: 1.3 1 420px; min-width: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .code-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  .code-head h3 { margin: 0; font-size: 16px; }
+  .tabs { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .tab { height: 40px; padding: 0 14px; border: 0; background: var(--surface); cursor: pointer; }
+  .tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .code-note { padding: 7px 12px; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--line); }
+  .code { margin: 0; background: var(--code-bg); color: var(--code-ink); font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; line-height: 1.7; padding: 10px 0; overflow: auto; }
+  .ln { display: block; padding: 0 14px 0 0; white-space: pre; transition: background .3s, opacity .3s; }
+  .ln .n { display: inline-block; width: 3.2em; padding-right: 1em; text-align: right; color: var(--code-dim); user-select: none; }
+  .ln.hl { background: var(--hl-bg); box-shadow: inset 4px 0 0 var(--hl-bar); }
+  .ln.dimmed { opacity: .5; }
+  .cm { color: #9AA3B2; font-style: italic; } .kw { color: #C792EA; font-weight: 500; } .ty { color: #FFCB6B; }
+  .fn { color: #82AAFF; } .st { color: #C3E88D; } .nu { color: #F78C6C; } .dc { color: #89DDFF; } .sf { color: #F07178; font-style: italic; }
+
+  /* practice */
+  .practice { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+  .practice h2 { margin: 0; font-size: 22px; }
+  .q-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .q-code { border-radius: 10px; overflow: hidden; }
+  .answers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  @media (max-width: 720px) { .answers { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .ans { min-height: 56px; display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; gap: 8px; text-align: left; padding: 6px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 500; }
+  .ans:hover:not(:disabled) { border-color: var(--muted); }
+  .ans:disabled { cursor: default; }
+  .ans.right { background: var(--ok-bg); border: 2px solid var(--ok); }
+  .ans.wrong { background: var(--warn-bg); border: 2px solid var(--warn); }
+  .feedback { border-radius: 10px; padding: 12px 14px; }
+  .feedback.ok { background: var(--ok-bg); }
+  .feedback.bad { background: var(--warn-bg); }
+  .feedback strong { display: block; margin-bottom: 2px; }
+  .q-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  @media (prefers-reduced-motion: reduce) { .ln, .seg { transition: none; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 9h18M3 15h18"></path></svg>
+    LLD Studio
+  </div>
+  <nav class="crumb" aria-label="Breadcrumb">UML Basics / Lesson 3</nav>
+  <span class="sample-tag">Sample for review</span>
+</header>
+
+<main class="wrap">
+  <div class="title-row">
+    <div class="kicker">UML Basics · Lesson 3 of 9</div>
+    <h1>The six relationships</h1>
+    <p>Every line between two class boxes answers one question: how strongly are these classes tied? Pick a relationship to see it drawn, what it means in practice, and the same idea in Python and Scala.</p>
+  </div>
+
+  <div class="lesson">
+    <nav class="card rel-list" id="relList" role="tablist" aria-label="Relationships" aria-orientation="vertical"></nav>
+
+    <section class="card main" id="relPanel" role="tabpanel">
+      <div class="rel-head">
+        <h2 id="relTitle">Loading…</h2>
+        <span class="notation" id="relNotation"></span>
+      </div>
+
+      <div class="stage">
+        <svg id="stage" viewBox="0 0 760 240" role="img" aria-labelledby="relTitle">
+          <defs><clipPath id="drawClip"><rect id="clipRect" x="250" y="96" width="0" height="64"></rect></clipPath></defs>
+
+          <g id="src">
+            <rect x="40" y="70" width="220" height="116" rx="10" class="fill-surface"></rect>
+            <rect x="40" y="70" width="220" height="40" rx="10" class="band-concrete"></rect>
+            <rect x="40" y="100" width="220" height="10" class="band-concrete"></rect>
+            <line x1="40" y1="110" x2="260" y2="110" class="div-concrete"></line>
+            <rect x="40" y="70" width="220" height="116" rx="10" class="frame-concrete"></rect>
+            <rect id="srcHl" x="44" y="116" width="212" height="22" rx="4" class="member-hl" opacity="0"></rect>
+            <text id="srcName" x="150" y="96" text-anchor="middle" class="t nm-t"></text>
+            <text id="srcM0" x="54" y="132" class="t mono"></text>
+            <text id="srcM1" x="54" y="154" class="t mono"></text>
+            <text id="srcM2" x="54" y="176" class="t mono muted italic"></text>
+            <text id="srcTick" x="250" y="132" text-anchor="end" class="t ok-ink" opacity="0">✓ promise kept</text>
+          </g>
+
+          <g id="tgt">
+            <rect x="500" y="70" width="220" height="116" rx="10" class="fill-surface"></rect>
+            <rect id="tgtBand" x="500" y="70" width="220" height="40" rx="10" class="band-concrete"></rect>
+            <rect id="tgtBand2" x="500" y="100" width="220" height="10" class="band-concrete"></rect>
+            <line id="tgtDiv" x1="500" y1="110" x2="720" y2="110" class="div-concrete"></line>
+            <rect id="tgtFrame" x="500" y="70" width="220" height="116" rx="10" class="frame-concrete"></rect>
+            <text id="tgtStereo" x="610" y="85" text-anchor="middle" class="t small iface-ink"></text>
+            <text id="tgtName" x="610" y="96" text-anchor="middle" class="t nm-t"></text>
+            <text id="tgtM0" x="514" y="132" class="t mono"></text>
+            <text id="tgtM1" x="514" y="154" class="t mono"></text>
+          </g>
+
+          <g clip-path="url(#drawClip)">
+            <line id="connLine" x1="260" y1="128" x2="500" y2="128" class="rel"></line>
+          </g>
+          <polyline id="decArrow" points="487,119 500,128 487,137" class="rel"></polyline>
+          <polygon id="decTri" points="483,117 500,128 483,139" class="tri"></polygon>
+          <polygon id="decDia" points="260,128 274,120 288,128 274,136" class="dia-hollow"></polygon>
+          <text id="connLabel" x="380" y="106" text-anchor="middle" class="lbl"></text>
+          <text id="multSrc" x="296" y="150" class="t small muted"></text>
+          <text id="multTgt" x="480" y="150" text-anchor="end" class="t small muted"></text>
+          <text id="connNote" x="380" y="172" text-anchor="middle" class="t small muted"></text>
+
+          <g id="srcX" class="xmark" opacity="0">
+            <rect x="40" y="70" width="220" height="116" rx="10"></rect>
+            <line x1="70" y1="88" x2="230" y2="168"></line><line x1="230" y1="88" x2="70" y2="168"></line>
+          </g>
+          <g id="tgtX" class="xmark" opacity="0">
+            <rect x="500" y="70" width="220" height="116" rx="10"></rect>
+            <line x1="530" y1="88" x2="690" y2="168"></line><line x1="690" y1="88" x2="530" y2="168"></line>
+          </g>
+          <text id="srcNote" x="150" y="214" text-anchor="middle" class="t warn-ink"></text>
+          <text id="tgtNote" x="610" y="214" text-anchor="middle" class="t"></text>
+          <g id="tokens"></g>
+        </svg>
+      </div>
+
+      <div class="scale" aria-label="How strong the tie is">
+        <div>
+          <h3>How tightly the classes are tied</h3>
+          <div class="seg-row">
+            <span class="seg" data-rel="dep">Dependency</span>
+            <span class="seg" data-rel="assoc">Association</span>
+            <span class="seg" data-rel="agg">Aggregation</span>
+            <span class="seg" data-rel="comp">Composition</span>
+          </div>
+          <div class="seg-ends"><span>loose</span><span>tight</span></div>
+        </div>
+        <div>
+          <h3>"Is a kind of" relationships</h3>
+          <div class="seg-row">
+            <span class="seg" data-rel="inh">Inheritance</span>
+            <span class="seg" data-rel="real">Realization</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn" id="prev" type="button" aria-label="Previous relationship">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="4" x2="18" y2="20"></line><polygon points="14,4 4,12 14,20"></polygon></svg>
+        </button>
+        <button class="btn primary" id="play" type="button">Play all six</button>
+        <button class="btn" id="next" type="button" aria-label="Next relationship">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="6" y1="4" x2="6" y2="20"></line><polygon points="10,4 20,12 10,20"></polygon></svg>
+        </button>
+        <button class="btn" id="replay" type="button">Replay</button>
+        <label class="speed">Speed
+          <select id="speed"><option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select>
+        </label>
+        <button class="btn" id="voiceBtn" type="button" aria-pressed="false">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+          <span id="voiceLabel">Voice-over off</span>
+        </button>
+        <label id="voicePick" hidden><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Voice</span><select id="voiceSelect"></select></label>
+      </div>
+
+      <div class="below">
+        <div class="narration" aria-live="polite">
+          <div class="box what" id="nWhat"><h3>What it means</h3><p id="tWhat"></p></div>
+          <div class="box spot" id="nSpot"><h3>How to spot it in code</h3><p id="tSpot"></p></div>
+          <div class="box why" id="nWhy"><h3>When to use it</h3><p id="tWhy"></p></div>
+        </div>
+        <div class="code-card">
+          <div class="code-head">
+            <h3>Code</h3>
+            <div class="tabs" role="tablist" aria-label="Language">
+              <button class="tab" role="tab" data-lang="py" aria-selected="true" type="button">Python</button>
+              <button class="tab" role="tab" data-lang="scala" aria-selected="false" type="button">Scala 3</button>
+            </div>
+          </div>
+          <div class="code-note">Runs as-is. Highlighted lines create the relationship.</div>
+          <pre class="code" id="code" tabindex="0" aria-label="Code example"></pre>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <section class="card practice" aria-labelledby="practiceTitle">
+    <div class="q-head">
+      <h2 id="practiceTitle">Spot the relationship</h2>
+      <span id="qScore" style="color: var(--muted); font-size: 15px"></span>
+    </div>
+    <p style="margin: 0; color: var(--muted)">Read the code and pick the line you would draw between the two classes.</p>
+    <div id="qCount" style="font-size: 14px; color: var(--muted)"></div>
+    <p id="qPrompt" style="margin: 0; font-size: 17px; font-weight: 600"></p>
+    <pre class="code q-code" id="qCode" tabindex="0" aria-label="Code to classify"></pre>
+    <div class="answers" id="qAnswers" role="group" aria-label="Answers"></div>
+    <div id="qFeedback" class="feedback" hidden aria-live="polite"></div>
+    <div class="q-actions">
+      <button class="btn" id="qReview" type="button" hidden>See this relationship again</button>
+      <button class="btn primary" id="qNext" type="button" hidden>Next question</button>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const SVGNS = "http://www.w3.org/2000/svg";
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- content ---------- */
+  const REL = [
+    {
+      id: "dep", name: "Dependency", short: "uses briefly", label: "uses", notation: "Dashed line, open arrow",
+      line: "dashed", start: null, end: "arrow", mult: ["", ""], src: "Invoice", tgt: "Printer", tgtKind: "concrete",
+      members: { py: { src: ["- total: float", "+ print_with(printer)"], tgt: ["+ print(text)"] },
+                 scala: { src: ["- total: BigDecimal", "+ printWith(printer)"], tgt: ["+ print(text)"] } },
+      hlMember: 1, extra: "call", call: { py: "print_with(printer)", scala: "printWith(printer)" }, note: "only during the call",
+      what: "One class uses another only for a moment, as a method parameter or a local variable. It doesn't keep it.",
+      spot: "The other class appears as a parameter or a local variable, never as a field.",
+      why: "It's the loosest tie. Prefer it whenever you only need something during one call; both classes stay easy to change.",
+      code: {
+        py: `class Printer:
+    def print(self, text: str) -> None:
+        print(f"Printing: {text}")
+
+class Invoice:
+    def __init__(self, total: float):
+        self.total = total
+
+    def print_with(self, printer: Printer) -> None:   # Printer is only a parameter
+        printer.print(f"Invoice total ₹{self.total}")
+
+Invoice(499).print_with(Printer())`,
+        scala: `class Printer:
+  def print(text: String): Unit = println(s"Printing: \$text")
+
+class Invoice(total: BigDecimal):
+  def printWith(printer: Printer): Unit =   // Printer is only a parameter
+    printer.print(s"Invoice total ₹\$total")
+
+@main def demo(): Unit = Invoice(499).printWith(Printer())`
+      },
+      hl: { py: [9, 10, 12], scala: [5, 6, 8] }
+    },
+    {
+      id: "assoc", name: "Association", short: "knows a", label: "knows a", notation: "Solid line, open arrow",
+      line: "solid", start: null, end: "arrow", mult: ["", "1"], src: "Order", tgt: "Customer", tgtKind: "concrete",
+      members: { py: { src: ["- order_id: str", "- customer: Customer"], tgt: ["- name: str"] },
+                 scala: { src: ["- orderId: String", "- customer: Customer"], tgt: ["- name: String"] } },
+      hlMember: 1, extra: "ask", call: { py: "order.customer", scala: "order.customer" }, result: "Customer(Asha)",
+      what: "One class knows another and keeps a reference to it as a field, for as long as it lives.",
+      spot: "A field that points to another object, usually passed in through the constructor.",
+      why: "Use it when an object needs to reach the other one again and again, like an order and its customer.",
+      code: {
+        py: `class Customer:
+    def __init__(self, name: str):
+        self.name = name
+
+class Order:
+    def __init__(self, order_id: str, customer: Customer):
+        self.order_id = order_id
+        self.customer = customer          # kept as a field: "knows a"
+
+asha = Customer("Asha")
+order = Order("A-101", asha)
+print(order.customer.name)                # Asha`,
+        scala: `class Customer(val name: String)
+
+class Order(val orderId: String, val customer: Customer)   // kept as a field: "knows a"
+
+@main def demo(): Unit =
+  val asha = Customer("Asha")
+  val order = Order("A-101", asha)
+  println(order.customer.name)           // Asha`
+      },
+      hl: { py: [6, 8, 12], scala: [3, 8] }
+    },
+    {
+      id: "agg", name: "Aggregation", short: "has a (parts live on)", label: "has a", notation: "Solid line, hollow diamond at the whole",
+      line: "solid", start: "hollow", end: null, mult: ["1", "1..*"], src: "Team", tgt: "Player", tgtKind: "concrete",
+      members: { py: { src: ["- players: list[Player]"], tgt: ["- name: str"] },
+                 scala: { src: ["- players: List[Player]"], tgt: ["- name: String"] } },
+      hlMember: 0, extra: "delete", survives: true,
+      what: "A whole made of parts, but the parts have a life of their own. Delete the team and the players still exist.",
+      spot: "A field holding objects that were created somewhere else and passed in.",
+      why: "Use it when parts can be shared or moved: a player can join another team.",
+      code: {
+        py: `class Player:
+    def __init__(self, name: str):
+        self.name = name
+
+class Team:
+    def __init__(self, players: list[Player]):
+        self.players = players            # parts are passed in
+
+ravi, meera = Player("Ravi"), Player("Meera")
+team = Team([ravi, meera])
+del team                                  # the team is gone...
+print(ravi.name)                          # ...but the players still exist`,
+        scala: `class Player(val name: String)
+
+class Team(val players: List[Player])     // parts are passed in
+
+@main def demo(): Unit =
+  val ravi = Player("Ravi")
+  val meera = Player("Meera")
+  locally {
+    val team = Team(List(ravi, meera))
+    println(team.players.size)
+  }                                       // the team is gone here...
+  println(ravi.name)                      // ...but the players still exist`
+      },
+      hl: { py: [6, 7, 11, 12], scala: [3, 11, 12] }
+    },
+    {
+      id: "comp", name: "Composition", short: "owns (parts die with it)", label: "owns", notation: "Solid line, filled diamond at the whole",
+      line: "solid", start: "filled", end: null, mult: ["1", "1"], src: "Car", tgt: "Engine", tgtKind: "concrete",
+      members: { py: { src: ["- model: str", "- _engine: Engine"], tgt: ["+ start(): str"] },
+                 scala: { src: ["- model: String", "- engine: Engine"], tgt: ["+ start(): String"] } },
+      hlMember: 1, extra: "delete", survives: false,
+      what: "A whole that owns its parts. It creates them itself, and they are destroyed with it.",
+      spot: "The whole creates the part itself, usually in its constructor, and never hands it out.",
+      why: "Use it when a part makes no sense on its own and nobody else should hold it.",
+      code: {
+        py: `class Engine:
+    def start(self) -> str:
+        return "vroom"
+
+class Car:
+    def __init__(self, model: str):
+        self.model = model
+        self._engine = Engine()           # created inside: Car owns it
+
+    def drive(self) -> str:
+        return f"{self.model}: {self._engine.start()}"
+
+print(Car("Nexon").drive())               # nobody else holds the Engine`,
+        scala: `class Engine:
+  def start(): String = "vroom"
+
+class Car(model: String):
+  private val engine = Engine()           // created inside: Car owns it
+  def drive(): String = s"\$model: \${engine.start()}"
+
+@main def demo(): Unit = println(Car("Nexon").drive())`
+      },
+      hl: { py: [8, 13], scala: [5] }
+    },
+    {
+      id: "inh", name: "Inheritance", short: "is a kind of", label: "is a", notation: "Solid line, hollow triangle at the parent",
+      line: "solid", start: null, end: "tri", mult: ["", ""], src: "SavingsAccount", tgt: "BankAccount", tgtKind: "concrete",
+      members: { py: { src: ["+ add_interest(rate)"], tgt: ["- balance: float", "+ deposit(amount)"] },
+                 scala: { src: ["+ addInterest(rate)"], tgt: ["# balance: BigDecimal", "+ deposit(amount)"] } },
+      hlMember: 0, extra: "inherit", ghost: "+ deposit(amount)  inherited",
+      what: "A class is a more specific kind of another class, and reuses its code.",
+      spot: "class SavingsAccount(BankAccount) in Python, or extends BankAccount in Scala.",
+      why: "Use it only for a true \u201cis a\u201d. If you only want to reuse code, composition is usually the safer choice.",
+      code: {
+        py: `class BankAccount:
+    def __init__(self, balance: float = 0):
+        self.balance = balance
+
+    def deposit(self, amount: float) -> None:
+        self.balance += amount
+
+class SavingsAccount(BankAccount):        # "is a" BankAccount
+    def add_interest(self, rate: float) -> None:
+        self.deposit(self.balance * rate)  # reuses the parent's code
+
+account = SavingsAccount(1000)
+account.add_interest(0.04)
+print(account.balance)                    # 1040.0`,
+        scala: `class BankAccount(protected var balance: BigDecimal = 0):
+  def deposit(amount: BigDecimal): Unit = balance += amount
+  def current: BigDecimal = balance
+
+class SavingsAccount(start: BigDecimal) extends BankAccount(start):   // "is a" BankAccount
+  def addInterest(rate: BigDecimal): Unit = deposit(balance * rate)   // reuses the parent's code
+
+@main def demo(): Unit =
+  val account = SavingsAccount(1000)
+  account.addInterest(BigDecimal("0.04"))
+  println(account.current)                // 1040.00`
+      },
+      hl: { py: [8, 10], scala: [5, 6] }
+    },
+    {
+      id: "real", name: "Realization", short: "implements an interface", label: "implements", notation: "Dashed line, hollow triangle at the interface",
+      line: "dashed", start: null, end: "tri", mult: ["", ""], src: "SmsNotifier", tgt: "Notifier", tgtKind: "iface",
+      members: { py: { src: ["+ send(text): str"], tgt: ["+ send(text): str"] },
+                 scala: { src: ["+ send(text): String"], tgt: ["+ send(text): String"] } },
+      hlMember: 0, extra: "promise",
+      what: "A class promises to do what an interface describes, and provides the code for it.",
+      spot: "The parent is an abstract base class or Protocol in Python, or a trait in Scala, with methods that have no body.",
+      why: "This is how design patterns stay flexible: code depends on the interface, and any class that realizes it can be plugged in.",
+      code: {
+        py: `from abc import ABC, abstractmethod
+
+class Notifier(ABC):                      # an interface: only promises
+    @abstractmethod
+    def send(self, text: str) -> str: ...
+
+class SmsNotifier(Notifier):              # realizes (implements) Notifier
+    def send(self, text: str) -> str:
+        return f"SMS: {text}"
+
+def alert(notifier: Notifier) -> None:
+    print(notifier.send("Server is down"))
+
+alert(SmsNotifier())`,
+        scala: `trait Notifier:                           // an interface: only promises
+  def send(text: String): String
+
+class SmsNotifier extends Notifier:       // realizes (implements) Notifier
+  def send(text: String): String = s"SMS: \$text"
+
+def alert(notifier: Notifier): Unit = println(notifier.send("Server is down"))
+
+@main def demo(): Unit = alert(SmsNotifier())`
+      },
+      hl: { py: [3, 5, 7, 8], scala: [1, 2, 4, 5] }
+    }
+  ];
+
+  const QUESTIONS = [
+    { lang: "py", answer: "dep", prompt: "What is the relationship from Report to PdfExporter?",
+      code: `class Report:
+    def export(self, exporter: PdfExporter) -> None:
+        exporter.save(self)`,
+      why: "PdfExporter is only a parameter of one method. Report never keeps it, so this is a dependency." },
+    { lang: "py", answer: "agg", prompt: "What is the relationship from Library to Book?",
+      code: `class Library:
+    def __init__(self, books: list[Book]):
+        self.books = books`,
+      why: "The books are created elsewhere and passed in. Delete the library and the books still exist: aggregation." },
+    { lang: "py", answer: "comp", prompt: "What is the relationship from House to Room?",
+      code: `class House:
+    def __init__(self):
+        self.rooms = [Room("kitchen"), Room("bedroom")]`,
+      why: "House creates its rooms itself, and they only exist as part of this house: composition." },
+    { lang: "scala", answer: "assoc", prompt: "What is the relationship from Ticket to Passenger?",
+      code: `class Ticket(val passenger: Passenger)`,
+      why: "Ticket keeps a field pointing to a Passenger created elsewhere. It's a single reference, not a whole made of parts: association." },
+    { lang: "scala", answer: "real", prompt: "What is the relationship from S3Storage to Storage?",
+      code: `trait Storage:
+  def upload(name: String): String
+
+class S3Storage extends Storage:
+  def upload(name: String) = s"s3://\$name"`,
+      why: "Storage is a trait with a method that has no body. S3Storage provides it: realization (dashed line, hollow triangle)." },
+    { lang: "scala", answer: "inh", prompt: "What is the relationship from Manager to Employee?",
+      code: `class Employee(val name: String):
+  def badge: String = s"ID-\$name"
+
+class Manager(name: String) extends Employee(name)`,
+      why: "Employee is a normal class with real code, and Manager extends it to reuse that code: inheritance (solid line, hollow triangle)." }
+  ];
+
+  /* ---------- small helpers ---------- */
+  function escapeHtml(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function relIcon(r, w) {
+    w = w || 48;
+    const dashed = r.line === "dashed" ? ' stroke-dasharray="5 4"' : "";
+    const x1 = r.start ? 14 : 2, x2 = r.end === "tri" ? w - 12 : w - 2;
+    let s = '<svg width="' + w + '" height="16" viewBox="0 0 ' + w + ' 16" aria-hidden="true">';
+    s += '<line x1="' + x2 + '" y1="8" x2="' + x1 + '" y2="8" stroke="currentColor" stroke-width="2"' + dashed + "></line>";
+    if (r.end === "arrow") s += '<polyline points="' + (w - 10) + ',3 ' + (w - 2) + ',8 ' + (w - 10) + ',13" fill="none" stroke="currentColor" stroke-width="2"></polyline>';
+    if (r.end === "tri") s += '<polygon points="' + (w - 12) + ',2 ' + (w - 1) + ',8 ' + (w - 12) + ',14" fill="var(--surface)" stroke="currentColor" stroke-width="2"></polygon>';
+    if (r.start) s += '<polygon points="1,8 7.5,3 14,8 7.5,13" fill="' + (r.start === "filled" ? "currentColor" : "var(--surface)") + '" stroke="currentColor" stroke-width="2"></polygon>';
+    return s + "</svg>";
+  }
+
+  /* syntax colouring that tolerates unfinished code (same as the pattern lessons) */
+  const KEYWORDS = {
+    py: new Set("and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield".split(" ")),
+    scala: new Set("abstract case catch class def do else enum extends extension final finally for given if implicit import lazy match new object override package private protected return sealed super then throw trait try type using val var while with yield".split(" "))
+  };
+  const LITERALS = new Set(["None", "True", "False", "true", "false", "null"]);
+  const TOKEN_RE = {
+    py: /(#.*$)|([rbfuRBFU]{0,2}(?:"""|'''))|([rbfuRBFU]{0,2}(?:"(?:[^"\\]|\\.)*(?:"|$)|'(?:[^'\\]|\\.)*(?:'|$)))|(@\w+)|(\b\d[\d_]*(?:\.\d+)?\b)|([A-Za-z_]\w*)/g,
+    scala: /(\/\/.*$)|(\/\*|[sfr]?""")|([sfr]?"(?:[^"\\]|\\.)*(?:"|$))|(@\w+)|(\b\d[\d_]*(?:\.\d+)?\b)|([A-Za-z_]\w*)/g
+  };
+  const span = (cls, text) => '<span class="' + cls + '">' + escapeHtml(text) + "</span>";
+  function highlightLines(lines, language) {
+    const kw = KEYWORDS[language];
+    let open = null;
+    return lines.map((line) => {
+      let out = "", pos = 0;
+      if (open) {
+        const end = line.indexOf(open.close);
+        if (end < 0) return span(open.cls, line);
+        out += span(open.cls, line.slice(0, end + open.close.length));
+        pos = end + open.close.length; open = null;
+      }
+      const re = new RegExp(TOKEN_RE[language].source, "g");
+      re.lastIndex = pos;
+      let last = pos, prev = "", m;
+      while ((m = re.exec(line)) !== null) {
+        out += escapeHtml(line.slice(last, m.index));
+        const s = m[0];
+        if (m[2]) {
+          const close = s.endsWith("/*") ? "*/" : s.slice(-3);
+          const cls = close === "*/" ? "cm" : "st";
+          const end = line.indexOf(close, re.lastIndex);
+          if (end < 0) { out += span(cls, line.slice(m.index)); open = { close, cls }; last = line.length; break; }
+          out += span(cls, line.slice(m.index, end + close.length)); re.lastIndex = last = end + close.length; prev = ""; continue;
+        }
+        let cls = null;
+        if (m[1]) cls = "cm"; else if (m[3]) cls = "st"; else if (m[4]) cls = "dc"; else if (m[5]) cls = "nu";
+        else if (kw.has(s)) cls = "kw"; else if (LITERALS.has(s)) cls = "nu";
+        else if (s === "self" || s === "this") cls = "sf"; else if (prev === "def") cls = "fn"; else if (/^[A-Z]/.test(s)) cls = "ty";
+        prev = m[6] ? s : "";
+        out += cls ? span(cls, s) : escapeHtml(s);
+        last = re.lastIndex;
+      }
+      return out + escapeHtml(line.slice(last));
+    });
+  }
+  function renderCodeInto(pre, text, language, hlLines) {
+    const lines = text.split("\n");
+    const colored = highlightLines(lines, language);
+    const hl = new Set(hlLines || []);
+    pre.innerHTML = lines.map((l, i) => {
+      const cls = ["ln"];
+      if (hl.size) cls.push(hl.has(i + 1) ? "hl" : "dimmed");
+      return '<span class="' + cls.join(" ") + '"><span class="n">' + (i + 1) + "</span>" + (colored[i] || " ") + "</span>";
+    }).join("");
+  }
+
+  /* ---------- state ---------- */
+  let current = 0, lang = "py", speed = 1;
+  let tl = null, playToken = 0, autoplay = false;
+  const seen = new Set();
+
+  /* ---------- voice-over (browser speech, free) ---------- */
+  const synth = "speechSynthesis" in window ? window.speechSynthesis : null;
+  let voiceOn = false, voices = [], chosenVoice = null, speechToken = 0;
+  function stopSpeech() { speechToken++; if (synth) synth.cancel(); markSpeaking(null); }
+  function markSpeaking(id) { ["nWhat", "nSpot", "nWhy"].forEach((x) => $(x).classList.toggle("speaking", x === id)); }
+  const sentences = (t) => t.match(/[^.!?]+[.!?]*/g).map((s) => s.trim()).filter(Boolean);
+  function speakRel(r) {
+    return new Promise((resolve) => {
+      if (!voiceOn || !synth) { resolve(); return; }
+      stopSpeech();
+      const token = speechToken;
+      const clean = (t) => t.replace(/\u201c|\u201d/g, "").replace(/([a-z])([A-Z])/g, "$1 $2");
+      const parts = [
+        { id: null, text: r.name + ". " + r.notation + "." },
+        { id: "nWhat", text: clean(r.what) },
+        { id: "nSpot", text: "How to spot it. " + clean(r.spot) },
+        { id: "nWhy", text: "When to use it. " + clean(r.why) }
+      ];
+      const queue = [];
+      parts.forEach((p) => sentences(p.text).forEach((t) => queue.push({ id: p.id, text: t })));
+      const safety = setTimeout(resolve, 30000);
+      setTimeout(() => {
+        if (token !== speechToken) { clearTimeout(safety); resolve(); return; }
+        queue.forEach((q, i) => {
+          const u = new SpeechSynthesisUtterance(q.text);
+          if (chosenVoice) { u.voice = chosenVoice; u.lang = chosenVoice.lang; } else { u.lang = "en-US"; }
+          u.rate = Math.min(2, Math.max(0.5, speed));
+          u.onstart = () => { if (token === speechToken) markSpeaking(q.id); };
+          if (i === queue.length - 1) u.onend = u.onerror = () => { clearTimeout(safety); if (token === speechToken) markSpeaking(null); resolve(); };
+          synth.speak(u);
+        });
+      }, 80);
+    });
+  }
+  function loadVoices() {
+    if (!synth) return;
+    voices = synth.getVoices().filter((v) => /^en(-|_|$)/i.test(v.lang));
+    const sel = $("voiceSelect"), prev = chosenVoice && chosenVoice.name;
+    sel.innerHTML = voices.map((v, i) => '<option value="' + i + '">' + escapeHtml(v.name + " (" + v.lang + ")") + "</option>").join("");
+    $("voicePick").hidden = !voiceOn || !voices.length;
+    if (!voices.length) { chosenVoice = null; return; }
+    let idx = voices.findIndex((v) => v.name === prev);
+    if (idx < 0) idx = voices.findIndex((v) => /natural|neural|google|samantha|daniel/i.test(v.name));
+    if (idx < 0) idx = Math.max(0, voices.findIndex((v) => v.default));
+    sel.value = String(idx); chosenVoice = voices[idx];
+  }
+
+  /* ---------- stage ---------- */
+  const setText = (id, t) => { $(id).textContent = t || ""; };
+  function pill(label, isResult) {
+    const g = document.createElementNS(SVGNS, "g");
+    g.setAttribute("class", "token" + (isResult ? " result" : ""));
+    g.setAttribute("opacity", "0");
+    const r = document.createElementNS(SVGNS, "rect"), t = document.createElementNS(SVGNS, "text");
+    t.setAttribute("text-anchor", "middle"); t.setAttribute("y", "4"); t.textContent = label;
+    g.appendChild(r); g.appendChild(t); $("tokens").appendChild(g);
+    const w = Math.ceil(t.getComputedTextLength()) + 22;
+    [["x", -w / 2], ["y", -13], ["width", w], ["height", 26], ["rx", 13]].forEach(([k, v]) => r.setAttribute(k, String(v)));
+    return g;
+  }
+
+  function prepareStage(r) {
+    if (tl) { tl.kill(); tl = null; }
+    $("tokens").innerHTML = "";
+    const m = r.members[lang];
+    setText("srcName", r.src); setText("srcM0", m.src[0]); setText("srcM1", m.src[1]); setText("srcM2", "");
+    setText("tgtName", r.tgt); setText("tgtM0", m.tgt[0]); setText("tgtM1", m.tgt[1]);
+    const iface = r.tgtKind === "iface";
+    setText("tgtStereo", iface ? "«interface»" : "");
+    $("tgtName").setAttribute("y", iface ? "102" : "96");
+    $("tgtBand").setAttribute("class", iface ? "band-iface" : "band-concrete");
+    $("tgtBand2").setAttribute("class", iface ? "band-iface" : "band-concrete");
+    $("tgtDiv").setAttribute("class", iface ? "div-iface" : "div-concrete");
+    $("tgtFrame").setAttribute("class", iface ? "frame-iface" : "frame-concrete");
+    $("tgtM0").setAttribute("class", "t mono" + (iface ? " italic" : ""));
+    $("srcHl").setAttribute("y", String(116 + 22 * r.hlMember));
+
+    const line = $("connLine");
+    // draw from the arrowhead end backwards, so a dashed line always meets the symbol with a full dash
+    line.setAttribute("x1", r.end === "tri" ? "483" : "500");
+    line.setAttribute("x2", r.start ? "288" : "260");
+    if (r.line === "dashed") line.setAttribute("stroke-dasharray", "9 6"); else line.removeAttribute("stroke-dasharray");
+    $("decDia").setAttribute("class", r.start === "filled" ? "dia-filled" : "dia-hollow");
+    setText("connLabel", r.label); setText("multSrc", r.mult[0]); setText("multTgt", r.mult[1]);
+    setText("connNote", ""); setText("srcNote", ""); setText("tgtNote", "");
+
+    gsap.set(["#src", "#tgt", "#srcHl", "#decArrow", "#decTri", "#decDia", "#connLabel", "#multSrc", "#multTgt", "#srcX", "#tgtX", "#srcTick", "#connNote", "#srcNote", "#tgtNote"], { opacity: 0, x: 0, scale: 1 });
+    gsap.set(["#connLine"], { opacity: 1 });
+    gsap.set("#clipRect", { attr: { width: 0 } });
+    gsap.set("#srcM2", { opacity: 1, x: 0 });
+  }
+
+  function buildTimeline(r) {
+    const t = gsap.timeline({ paused: true });
+    const decor = r.end === "arrow" ? "#decArrow" : r.end === "tri" ? "#decTri" : null;
+    t.to("#src", { opacity: 1, duration: 0.45 })
+      .to("#tgt", { opacity: 1, duration: 0.45 }, "-=0.15")
+      .to("#srcHl", { opacity: 1, duration: 0.35 });
+
+    if (r.extra === "call") {        // dependency: the link only exists while the call travels
+      const p = pill(r.call[lang], false);
+      t.set(p, { x: 380, y: 128 })
+        .set(p, { x: 330 })
+        .to(p, { opacity: 1, duration: 0.2 })
+        .to("#clipRect", { attr: { width: 260 }, duration: 0.9, ease: "power1.inOut" }, "<")
+        .to(p, { x: 430, duration: 0.9, ease: "power1.inOut" }, "<")
+        .to(decor, { opacity: 1, scale: 1, duration: 0.25, transformOrigin: "100% 50%" })
+        .to(p, { opacity: 0, duration: 0.25 }, "+=0.3")
+        .to(["#connLine", decor], { opacity: 0.3, duration: 0.6 })
+        .add(() => { setText("connNote", r.note); })
+        .to("#connNote", { opacity: 1, duration: 0.3 })
+        .to("#connLabel", { opacity: 1, duration: 0.3 }, "<");
+      return t;
+    }
+
+    t.to("#clipRect", { attr: { width: 260 }, duration: 0.9, ease: "power1.inOut" });
+    if (r.start) t.fromTo("#decDia", { opacity: 0, scale: 0.2 }, { opacity: 1, scale: 1, duration: 0.3, transformOrigin: "50% 50%", immediateRender: false }, "-=0.75");
+    if (decor) t.fromTo(decor, { opacity: 0, scale: 0.2 }, { opacity: 1, scale: 1, duration: 0.3, transformOrigin: "100% 50%", immediateRender: false });
+    t.to(["#connLabel", "#multSrc", "#multTgt"], { opacity: 1, duration: 0.35 });
+
+    if (r.extra === "ask") {          // association: the order can reach its customer at any time
+      const p = pill(r.call[lang], false), res = pill(r.result, true);
+      t.set(p, { x: 330, y: 128 }).to(p, { opacity: 1, duration: 0.2 }, "+=0.3")
+        .to(p, { x: 440, duration: 0.7, ease: "power1.inOut" })
+        .to(p, { opacity: 0, duration: 0.2 })
+        .set(res, { x: 440, y: 128 }).to(res, { opacity: 1, duration: 0.2 })
+        .to(res, { x: 320, duration: 0.7, ease: "power1.inOut" })
+        .to(res, { opacity: 0, duration: 0.3 }, "+=0.6");
+    } else if (r.extra === "delete") { // aggregation vs composition: delete the whole
+      t.add(() => { setText("srcNote", r.src + " deleted"); setText("tgtNote", r.survives ? r.tgt + " still exists \u2713" : r.tgt + " is gone too"); }, "+=0.5")
+        .to("#srcX", { opacity: 1, duration: 0.4 })
+        .to("#srcNote", { opacity: 1, duration: 0.3 }, "<")
+        .to(["#connLine", "#decDia", "#connLabel", "#multSrc", "#multTgt"], { opacity: 0.15, duration: 0.5 });
+      if (r.survives) {
+        t.to("#tgt", { scale: 1.05, duration: 0.2, transformOrigin: "50% 50%" }).to("#tgt", { scale: 1, duration: 0.25 })
+          .add(() => $("tgtNote").setAttribute("class", "t ok-ink"), "<")
+          .to("#tgtNote", { opacity: 1, duration: 0.3 });
+      } else {
+        t.to("#tgtX", { opacity: 1, duration: 0.4 }, "+=0.2")
+          .add(() => $("tgtNote").setAttribute("class", "t warn-ink"), "<")
+          .to("#tgtNote", { opacity: 1, duration: 0.3 }, "<");
+      }
+    } else if (r.extra === "inherit") { // inheritance: the parent's method appears in the child
+      t.add(() => setText("srcM2", r.ghost), "+=0.3")
+        .fromTo("#srcM2", { x: 460, opacity: 0 }, { x: 0, opacity: 1, duration: 1.0, ease: "power2.out", immediateRender: false })
+        .to("#tgt", { scale: 1.04, duration: 0.2, transformOrigin: "50% 50%" }, "<")
+        .to("#tgt", { scale: 1, duration: 0.25 });
+    } else if (r.extra === "promise") { // realization: the class fulfils the interface's promise
+      t.to("#tgt", { scale: 1.04, duration: 0.2, transformOrigin: "50% 50%" }, "+=0.3")
+        .to("#tgt", { scale: 1, duration: 0.25 })
+        .to("#srcTick", { opacity: 1, duration: 0.4 });
+    }
+    return t;
+  }
+
+  function play(t) {
+    return new Promise((resolve) => {
+      t.timeScale(speed);
+      if (reduceMotion) { t.progress(1); resolve(); return; }
+      t.eventCallback("onComplete", () => resolve());
+      t.play();
+    });
+  }
+
+  /* ---------- rendering ---------- */
+  function renderList() {
+    $("relList").innerHTML = REL.map((r, i) =>
+      '<button type="button" class="rel-tab" role="tab" id="relTab' + i + '" aria-controls="relPanel" aria-selected="' + (i === current) + '"' +
+      (i === current ? "" : ' tabindex="-1"') + ">" + relIcon(r) +
+      '<span><span class="nm">' + r.name + (seen.has(r.id) ? ' <span class="done" aria-label="seen">\u2713</span>' : "") + '</span><span class="sh">' + r.short + "</span></span></button>").join("");
+  }
+  function renderCode() {
+    const r = REL[current];
+    renderCodeInto($("code"), r.code[lang], lang, r.hl[lang]);
+    document.querySelectorAll("[data-lang]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.lang === lang)));
+  }
+  function renderText() {
+    const r = REL[current];
+    $("relTitle").textContent = r.name + ": " + r.short;
+    $("relNotation").innerHTML = relIcon(r, 48) + "<span>" + escapeHtml(r.notation) + "</span>";
+    $("tWhat").textContent = r.what; $("tSpot").textContent = r.spot; $("tWhy").textContent = r.why;
+    document.querySelectorAll(".seg").forEach((s) => s.classList.toggle("on", s.dataset.rel === r.id));
+    $("relPanel").setAttribute("aria-labelledby", "relTab" + current);
+  }
+  function refreshButtons() {
+    $("play").textContent = autoplay ? "Pause" : "Play all six";
+    $("prev").disabled = current === 0;
+    $("next").disabled = current === REL.length - 1;
+  }
+
+  /* show one relationship: draw it and (optionally) narrate it; resolves when both finish */
+  function show(i, opts) {
+    current = (i + REL.length) % REL.length;
+    const r = REL[current];
+    seen.add(r.id);
+    renderList(); renderText(); renderCode(); refreshButtons();
+    if (opts && opts.focus) $("relTab" + current).focus();
+    prepareStage(r);
+    tl = buildTimeline(r);
+    return Promise.all([play(tl), speakRel(r)]);
+  }
+
+  async function playAll() {
+    const token = ++playToken;
+    autoplay = true; refreshButtons();
+    for (let i = current; i < REL.length; i++) {
+      if (token !== playToken) return;
+      await show(i);
+      if (token !== playToken) return;
+      await new Promise((r) => setTimeout(r, voiceOn ? 700 : 2200 / speed));
+    }
+    if (token === playToken) { autoplay = false; refreshButtons(); }
+  }
+  function stopAll() { playToken++; autoplay = false; stopSpeech(); refreshButtons(); }
+  function go(i) { stopAll(); show(i, { focus: true }); }
+
+  /* ---------- practice ---------- */
+  let qi = 0, score = 0, answered = false, finished = false;
+  function renderQuestion() {
+    const q = QUESTIONS[qi];
+    answered = false;
+    $("qCount").textContent = "Question " + (qi + 1) + " of " + QUESTIONS.length + " · " + (q.lang === "py" ? "Python" : "Scala 3");
+    $("qPrompt").textContent = q.prompt;
+    renderCodeInto($("qCode"), q.code, q.lang, []);
+    $("qAnswers").innerHTML = REL.map((r) =>
+      '<button type="button" class="ans" data-rel="' + r.id + '">' + relIcon(r, 44) + "<span>" + r.name + "</span></button>").join("");
+    $("qFeedback").hidden = true; $("qNext").hidden = true; $("qReview").hidden = true;
+    $("qScore").textContent = "Score: " + score + " / " + QUESTIONS.length;
+  }
+  function answer(id) {
+    if (answered) return;
+    answered = true;
+    const q = QUESTIONS[qi], ok = id === q.answer;
+    if (ok) score++;
+    document.querySelectorAll(".ans").forEach((b) => {
+      b.disabled = true;
+      if (b.dataset.rel === q.answer) b.classList.add("right");
+      else if (b.dataset.rel === id) b.classList.add("wrong");
+    });
+    const right = REL.find((r) => r.id === q.answer);
+    const fb = $("qFeedback");
+    fb.className = "feedback " + (ok ? "ok" : "bad");
+    fb.innerHTML = "<strong>" + (ok ? "Correct." : "Not quite. It's " + right.name.toLowerCase() + ".") + "</strong>" + escapeHtml(q.why);
+    fb.hidden = false;
+    $("qReview").hidden = ok;
+    $("qNext").hidden = false;
+    $("qNext").textContent = qi === QUESTIONS.length - 1 ? "See your result" : "Next question";
+    $("qScore").textContent = "Score: " + score + " / " + QUESTIONS.length;
+    $("qNext").focus();
+  }
+  function nextQuestion() {
+    if (qi < QUESTIONS.length - 1) { qi++; renderQuestion(); return; }
+    $("qCount").textContent = "Done";
+    $("qPrompt").textContent = "You scored " + score + " out of " + QUESTIONS.length + "." + (score === QUESTIONS.length ? " All six spotted." : " Review the ones you missed above, then try again.");
+    $("qCode").innerHTML = ""; $("qAnswers").innerHTML = ""; $("qFeedback").hidden = true; $("qReview").hidden = true;
+    $("qNext").textContent = "Try again";
+    finished = true;
+  }
+
+  /* ---------- wiring ---------- */
+  function wire() {
+    $("relList").addEventListener("click", (e) => { const b = e.target.closest(".rel-tab"); if (b) go(Number(b.id.replace("relTab", ""))); });
+    $("relList").addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown" || e.key === "ArrowRight") { e.preventDefault(); go(current + 1); }
+      else if (e.key === "ArrowUp" || e.key === "ArrowLeft") { e.preventDefault(); go(current - 1); }
+    });
+    $("prev").addEventListener("click", () => go(current - 1));
+    $("next").addEventListener("click", () => go(current + 1));
+    $("replay").addEventListener("click", () => go(current));
+    $("play").addEventListener("click", () => { if (autoplay) stopAll(); else playAll(); });
+    $("speed").addEventListener("change", (e) => { speed = Number(e.target.value); if (tl) tl.timeScale(speed); });
+    document.querySelectorAll("[data-lang]").forEach((b) => b.addEventListener("click", () => {
+      lang = b.dataset.lang; renderCode();
+      const m = REL[current].members[lang];   // member names follow the language
+      setText("srcM0", m.src[0]); setText("srcM1", m.src[1]); setText("tgtM0", m.tgt[0]); setText("tgtM1", m.tgt[1]);
+    }));
+    if (synth) {
+      loadVoices();
+      synth.addEventListener ? synth.addEventListener("voiceschanged", loadVoices) : (synth.onvoiceschanged = loadVoices);
+      $("voiceBtn").addEventListener("click", () => {
+        voiceOn = !voiceOn;
+        $("voiceBtn").setAttribute("aria-pressed", String(voiceOn));
+        $("voiceLabel").textContent = voiceOn ? "Voice-over on" : "Voice-over off";
+        $("voicePick").hidden = !voiceOn || !voices.length;
+        if (voiceOn) speakRel(REL[current]); else stopSpeech();
+      });
+      $("voiceSelect").addEventListener("change", (e) => { chosenVoice = voices[Number(e.target.value)] || null; if (voiceOn) speakRel(REL[current]); });
+      window.addEventListener("pagehide", () => synth.cancel());
+    } else {
+      $("voiceBtn").disabled = true;
+      $("voiceBtn").title = "This browser has no built-in speech";
+    }
+    $("qAnswers").addEventListener("click", (e) => { const b = e.target.closest(".ans"); if (b) answer(b.dataset.rel); });
+    $("qNext").addEventListener("click", () => {
+      if (finished) { finished = false; qi = 0; score = 0; renderQuestion(); }
+      else nextQuestion();
+    });
+    $("qReview").addEventListener("click", () => {
+      const idx = REL.findIndex((r) => r.id === QUESTIONS[qi].answer);
+      go(idx);
+      $("relPanel").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+    });
+  }
+
+  function start() {
+    if (!window.gsap) { $("relTitle").textContent = "The animation library could not load. Check your connection and reload."; return; }
+    wire();
+    renderQuestion();
+    show(0);
+  }
+  const fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+  Promise.race([fontsReady, new Promise((r) => setTimeout(r, 1500))]).then(start);
+})();
+</script>
+</body>
+</html>

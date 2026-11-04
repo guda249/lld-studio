@@ -1,0 +1,1998 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Strategy pattern — story animation (sample)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #F6F7F9; --surface: #FFFFFF; --ink: #14181F; --muted: #545D6B; --line: #E3E6EB;
+    --accent: #3730A3; --accent-ink: #FFFFFF; --accent-soft: #EEF0FF;
+    --code-bg: #14181F; --code-ink: #E6E9EF; --code-dim: #7A8394; --hl-bg: #3A3320; --hl-bar: #E69F00;
+    --iface: #0072B2; --iface-bg: #E1EEF7; --iface-ink: #0B4F7C;
+    --concrete: #009E73; --concrete-bg: #E0F3EC;
+    --client: #8A8F98; --client-bg: #F0F0F0;
+    --key: #E69F00; --key-ink: #8A5A00;
+    --warn: #D55E00; --warn-bg: #FDF0EA; --warn-ink: #A33F00;
+    --ok: #0B6B3A; --ok-bg: #E3F5EA;
+    --stage-bg: #FAFBFC; --dot: #DDE1E6; --stroke: #14181F;
+    --token-bg: #3730A3; --result-bg: #0B6B3A; --token-ink: #FFFFFF;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0F1217; --surface: #171B22; --ink: #E8EBF0; --muted: #A3AAB6; --line: #2A303A;
+      --accent: #A5ACFF; --accent-ink: #14181F; --accent-soft: #252A4A;
+      --code-bg: #0B0D11;
+      --iface: #4AA3DF; --iface-bg: #10293B; --iface-ink: #9CCDF0;
+      --concrete: #2FBF8F; --concrete-bg: #0E2E25;
+      --client: #8A8F98; --client-bg: #22262D;
+      --key-ink: #F2B66D;
+      --warn: #F07A3A; --warn-bg: #3A2116; --warn-ink: #FFB38A;
+      --ok: #4CC38A; --ok-bg: #12301F;
+      --stage-bg: #12161C; --dot: #232831; --stroke: #C9CED6;
+      --token-bg: #5B54E0; --result-bg: #138A50;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0F1217; --surface: #171B22; --ink: #E8EBF0; --muted: #A3AAB6; --line: #2A303A;
+    --accent: #A5ACFF; --accent-ink: #14181F; --accent-soft: #252A4A;
+    --code-bg: #0B0D11;
+    --iface: #4AA3DF; --iface-bg: #10293B; --iface-ink: #9CCDF0;
+    --concrete: #2FBF8F; --concrete-bg: #0E2E25;
+    --client: #8A8F98; --client-bg: #22262D;
+    --key-ink: #F2B66D;
+    --warn: #F07A3A; --warn-bg: #3A2116; --warn-ink: #FFB38A;
+    --ok: #4CC38A; --ok-bg: #12301F;
+    --stage-bg: #12161C; --dot: #232831; --stroke: #C9CED6;
+    --token-bg: #5B54E0; --result-bg: #138A50;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-size: 16px; line-height: 1.5;
+  }
+  button, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  .top {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px;
+    padding: 14px 24px; background: var(--surface); border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
+  .crumb { color: var(--muted); font-size: 14px; }
+  .sample-tag {
+    margin-left: auto; font-size: 13px; font-weight: 600; color: var(--key-ink);
+    background: var(--warn-bg); padding: 6px 12px; border-radius: 99px;
+  }
+
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+  .title-row h1 { margin: 0; font-size: 34px; line-height: 1.15; }
+  .title-row p { margin: 6px 0 0; color: var(--muted); font-size: 17px; max-width: 70ch; }
+
+  .grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+  @media (max-width: 1040px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+  .stage-card { padding: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+  .stage {
+    width: 100%; border-radius: 12px; border: 1px solid var(--line);
+    background-color: var(--stage-bg);
+    background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+    background-size: 18px 18px;
+    overflow-x: auto;
+  }
+  .stage svg { display: block; width: 100%; min-width: 620px; height: auto; font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+  .t { fill: var(--ink); font-size: 13px; }
+  .name { font-weight: 700; font-size: 12.5px; }
+  .big { font-weight: 700; font-size: 16px; }
+  .small { font-size: 11px; }
+  .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11.5px; }
+  .italic { font-style: italic; }
+  .muted { fill: var(--muted); }
+  .iface-ink { fill: var(--iface-ink); }
+  .key-ink { fill: var(--key-ink); font-weight: 600; }
+  .warn-ink { fill: var(--warn-ink); font-weight: 600; }
+  .ok-ink { fill: var(--ok); font-weight: 600; }
+  .fill-surface { fill: var(--surface); }
+  .fill-concrete-bg { fill: var(--concrete-bg); }
+  .fill-iface-bg { fill: var(--iface-bg); }
+  .frame-concrete { fill: none; stroke: var(--concrete); stroke-width: 2; }
+  .frame-key { fill: none; stroke: var(--key); stroke-width: 3; }
+  .frame-client { fill: var(--client-bg); stroke: var(--client); stroke-width: 2; }
+  .stroke-concrete { stroke: var(--concrete); stroke-width: 1; }
+  .stroke-iface { stroke: var(--iface); stroke-width: 1; }
+  .rel { stroke: var(--stroke); stroke-width: 2; fill: none; }
+  .dashed { stroke-dasharray: 7 5; }
+  .tri { fill: var(--surface); stroke: var(--stroke); stroke-width: 2; }
+  .flash { fill: none; stroke: var(--warn); stroke-width: 4; }
+  .ring { fill: none; stroke: var(--key); stroke-width: 3; }
+  .badge-warn rect { fill: var(--warn-bg); stroke: var(--warn); stroke-width: 1.5; }
+  .badge-ok rect { fill: var(--ok-bg); stroke: var(--ok); stroke-width: 1.5; }
+  .token rect { fill: var(--token-bg); }
+  .token.result rect { fill: var(--result-bg); }
+  .token text { fill: var(--token-ink); font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; font-weight: 500; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { width: 14px; height: 14px; border-radius: 3px; border: 2px solid; display: inline-block; }
+
+  .narration { display: flex; flex-direction: column; gap: 6px; min-height: 150px; transition: opacity .25s ease; }
+  .narration.fading { opacity: 0; }
+  .step-count { font-size: 14px; color: var(--muted); }
+  .narration h2 { margin: 0; font-size: 22px; line-height: 1.25; }
+  .narration p { margin: 0; font-size: 16px; max-width: 72ch; }
+  .why { background: var(--accent-soft); border-radius: 10px; padding: 10px 14px; }
+  .why strong { color: var(--accent); }
+
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; border-top: 1px solid var(--line); padding-top: 14px; }
+  .btn {
+    height: 44px; min-width: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--surface); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    font-weight: 500;
+  }
+  .btn:hover { border-color: var(--muted); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; min-width: 110px; }
+  .btn:disabled { opacity: .4; cursor: default; }
+  .dots { display: flex; gap: 6px; flex: 1 1 260px; }
+  .dot {
+    flex: 1; height: 44px; border: 0; background: none; cursor: pointer; padding: 0; position: relative;
+  }
+  .dot::before {
+    content: ""; position: absolute; left: 0; right: 0; top: 19px; height: 6px; border-radius: 99px; background: var(--line);
+  }
+  .dot.done::before { background: var(--accent); opacity: .45; }
+  .dot[aria-current="step"]::before { background: var(--accent); opacity: 1; height: 8px; top: 18px; }
+  .speed { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
+  .speed select { height: 44px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); padding: 0 8px; }
+  .hint { font-size: 13px; color: var(--muted); width: 100%; }
+
+  .code-card { overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+  .code-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  .code-head h2 { margin: 0; font-size: 17px; }
+  .tabs { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .tab { height: 44px; padding: 0 16px; border: 0; background: var(--surface); cursor: pointer; }
+  .tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .code-note { padding: 8px 14px; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--line); }
+  .code {
+    margin: 0; background: var(--code-bg); color: var(--code-ink);
+    font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; line-height: 1.7;
+    padding: 12px 0; max-height: 560px; overflow: auto; position: relative;
+  }
+  .ln { display: block; padding: 0 14px 0 0; white-space: pre; transition: background .3s ease, opacity .3s ease; }
+  .ln .n { display: inline-block; width: 3.2em; padding-right: 1em; text-align: right; color: var(--code-dim); user-select: none; }
+  .ln.hl { background: var(--hl-bg); box-shadow: inset 4px 0 0 var(--hl-bar); }
+  .ln.dimmed { opacity: .45; }
+  .ln.new { animation: arrive .8s ease; }
+  .cm { color: #9AA3B2; font-style: italic; }
+  .kw { color: #C792EA; font-weight: 500; }
+  .ty { color: #FFCB6B; }
+  .fn { color: #82AAFF; }
+  .st { color: #C3E88D; }
+  .nu { color: #F78C6C; }
+  .dc { color: #89DDFF; }
+  .sf { color: #F07178; font-style: italic; }
+  @keyframes arrive { from { background: #1F4D36; } to { background: transparent; } }
+  .code-legend {
+    display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 10px 14px; background: var(--code-bg);
+    border-top: 1px solid #262C36; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px;
+  }
+
+  .voice { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .btn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .voice select { height: 44px; max-width: 240px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); padding: 0 8px; }
+  .voice-note { font-size: 13px; color: var(--muted); }
+  .narration .speaking { color: var(--accent); }
+  .narration h2, .narration p, .narration span { transition: color .2s ease; }
+
+  [hidden] { display: none !important; }
+
+  /* view tabs */
+  .view-tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); }
+  .view-tab {
+    height: 48px; padding: 0 18px; border: 0; background: none; cursor: pointer; font-weight: 600;
+    color: var(--muted); border-bottom: 3px solid transparent; margin-bottom: -1px;
+  }
+  .view-tab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* real-world examples */
+  .ex-intro { margin: 0; color: var(--muted); font-size: 16px; }
+  .ex-picker { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+  .ex-card {
+    text-align: left; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--line);
+    background: var(--surface); cursor: pointer; display: flex; flex-direction: column; gap: 4px; min-height: 44px;
+  }
+  .ex-card:hover { border-color: var(--muted); }
+  .ex-card[aria-selected="true"] { border: 2px solid var(--accent); padding: 13px 15px; background: var(--accent-soft); }
+  .ex-card .dom { font-size: 13px; color: var(--muted); }
+  .ex-card .ttl { font-weight: 700; font-size: 16px; }
+  .ex-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .ex-body h2 { margin: 0; font-size: 24px; line-height: 1.2; }
+  .ex-body h3 { margin: 0 0 4px; font-size: 15px; }
+  .ex-body p { margin: 0; max-width: 70ch; }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px; padding: 6px 10px; border-radius: 8px;
+    background: var(--concrete-bg); border: 1.5px solid var(--concrete);
+  }
+  .tag.iface { background: var(--iface-bg); border-color: var(--iface); }
+  .watch { background: var(--warn-bg); border-radius: 10px; padding: 10px 14px; }
+  .watch strong { color: var(--warn-ink); }
+  .try {
+    border: 1px dashed var(--muted); border-radius: 12px; padding: 16px; display: flex; flex-direction: column;
+    gap: 12px; background: var(--stage-bg);
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    height: 44px; padding: 0 16px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface);
+    cursor: pointer; font-weight: 500;
+  }
+  .chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  .slider { display: grid; grid-template-columns: minmax(130px, 170px) 1fr; align-items: center; gap: 4px 12px; }
+  .slider label { font-size: 14px; }
+  .slider output { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .slider input[type="range"] { width: 100%; height: 44px; accent-color: var(--accent); }
+  .slider select { height: 44px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); padding: 0 8px; justify-self: start; }
+  .result { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+  .big-num { font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .formula { color: var(--muted); font-size: 14px; }
+  .sort-list { position: relative; height: 174px; }
+  .sort-item {
+    position: absolute; left: 0; right: 0; top: 0; height: 50px; display: flex; align-items: center; gap: 12px;
+    padding: 0 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface);
+    transition: transform .5s ease; font-size: 15px;
+  }
+  .sort-item .pos { font-weight: 700; color: var(--accent); width: 1.5em; }
+  .sort-item .nm { font-weight: 600; flex: 1; }
+  .sort-item .meta { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .bars { display: flex; align-items: flex-end; gap: 12px; height: 170px; }
+  .bar-col { flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; }
+  .bar { width: 100%; max-width: 60px; background: var(--accent); border-radius: 6px 6px 0 0; transition: height .5s ease; min-height: 2px; }
+  .bar-val { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .bar-lbl { font-size: 12px; color: var(--muted); }
+  .mini {
+    border-radius: 12px; border: 1px solid var(--line); overflow-x: auto;
+    background-color: var(--stage-bg);
+    background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+    background-size: 18px 18px;
+  }
+  .mini svg { display: block; width: 100%; min-width: 560px; height: auto; font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+  .mini .sub { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; fill: var(--ink); }
+  .mini-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .mini-cap { flex: 1 1 280px; font-size: 15px; line-height: 1.45; min-height: 3em; }
+  .mini-cap .k { display: block; font-size: 13px; color: var(--muted); }
+  .uses { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+  .uses h2 { margin: 0; font-size: 20px; }
+  .uses ul { margin: 0; padding-left: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 8px 28px; }
+  .uses code, .ex-body code { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: .92em; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sort-item, .bar { transition: none; }
+    .narration, .ln { transition: none; }
+    .ln.new { animation: none; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 9h18M3 15h18"></path></svg>
+    LLD Studio
+  </div>
+  <nav class="crumb" aria-label="Breadcrumb">Patterns / Behavioral / Strategy</nav>
+  <span class="sample-tag">Sample for review</span>
+</header>
+
+<main class="wrap">
+  <div class="title-row">
+    <h1>Strategy pattern</h1>
+    <p>Watch a growing if/elif turn into payment classes you can swap while the program runs, then see where the same idea shows up in real products.</p>
+  </div>
+
+  <div class="view-tabs" role="tablist" aria-label="View">
+    <button class="view-tab" role="tab" type="button" id="viewStory" aria-selected="true" aria-controls="storyPanel">Story animation</button>
+    <button class="view-tab" role="tab" type="button" id="viewExamples" aria-selected="false" aria-controls="examplesPanel" tabindex="-1">Real-world examples</button>
+  </div>
+
+  <div class="grid" id="storyPanel" role="tabpanel" aria-labelledby="viewStory">
+    <section class="card stage-card" aria-label="Animation">
+      <div class="stage">
+        <svg id="stage" viewBox="0 0 910 440" role="img" aria-labelledby="stepTitle">
+          <!-- client -->
+          <g id="app">
+            <rect x="20" y="185" width="110" height="60" rx="10" class="frame-client"></rect>
+            <text x="75" y="207" text-anchor="middle" class="t small muted">«client»</text>
+            <text x="75" y="228" text-anchor="middle" class="t big">App</text>
+          </g>
+
+          <!-- context: Checkout -->
+          <g id="checkout">
+            <rect x="180" y="150" width="230" height="130" rx="10" class="fill-surface"></rect>
+            <rect x="180" y="150" width="230" height="36" rx="10" class="fill-concrete-bg"></rect>
+            <rect x="180" y="172" width="230" height="14" class="fill-concrete-bg"></rect>
+            <line x1="180" y1="186" x2="410" y2="186" class="stroke-concrete"></line>
+            <rect x="180" y="150" width="230" height="130" rx="10" class="frame-key"></rect>
+            <text x="295" y="174" text-anchor="middle" class="t big">Checkout</text>
+            <g id="naive">
+              <text id="row0" x="196" y="208" class="t mono" opacity="0">if kind == "card": …</text>
+              <text id="row1" x="196" y="234" class="t mono" opacity="0">elif kind == "upi": …</text>
+              <text id="row2" x="196" y="260" class="t mono" opacity="0">elif kind == "wallet": …</text>
+            </g>
+            <g id="clean" opacity="0">
+              <text x="196" y="210" class="t mono">- method: PaymentMethod</text>
+              <text x="196" y="236" class="t mono">+ set_method(m)</text>
+              <text x="196" y="262" class="t mono">+ pay(amount)</text>
+            </g>
+            <rect id="checkoutFlash" x="180" y="150" width="230" height="130" rx="10" class="flash" opacity="0"></rect>
+          </g>
+
+          <g id="badgeWarn" class="badge-warn" opacity="0">
+            <rect x="200" y="112" width="190" height="26" rx="13"></rect>
+            <text x="295" y="129" text-anchor="middle" class="t small warn-ink">Edited for every new type</text>
+          </g>
+          <g id="badgeOk" class="badge-ok" opacity="0">
+            <rect x="200" y="112" width="190" height="26" rx="13"></rect>
+            <text x="295" y="129" text-anchor="middle" class="t small ok-ink">Checkout: 0 lines changed</text>
+          </g>
+
+          <!-- association Checkout -> interface -->
+          <line id="assocLine" x1="410" y1="195" x2="528" y2="88" class="rel" stroke-dasharray="160" stroke-dashoffset="160"></line>
+          <polyline id="assocHead" points="523.1,100.5 528,88 515.1,91.6" class="rel" opacity="0"></polyline>
+          <text id="assocLabel" x="482" y="160" class="t small muted" opacity="0">holds one</text>
+
+          <!-- realization lines -->
+          <g id="real" opacity="0">
+            <line x1="497.5" y1="340" x2="497.5" y2="290" class="rel dashed"></line>
+            <line x1="612.5" y1="340" x2="612.5" y2="290" class="rel dashed"></line>
+            <line x1="727.5" y1="340" x2="727.5" y2="290" class="rel dashed"></line>
+            <line x1="497.5" y1="290" x2="727.5" y2="290" class="rel dashed"></line>
+            <line x1="645" y1="290" x2="645" y2="134" class="rel dashed"></line>
+            <polygon points="637,134 653,134 645,121" class="tri"></polygon>
+            <text x="655" y="235" class="t small muted">implements</text>
+          </g>
+          <g id="real3" opacity="0">
+            <line x1="842.5" y1="340" x2="842.5" y2="290" class="rel dashed"></line>
+            <line x1="727.5" y1="290" x2="842.5" y2="290" class="rel dashed"></line>
+          </g>
+
+          <!-- strategy interface -->
+          <g id="iface" opacity="0">
+            <rect x="530" y="40" width="230" height="80" rx="10" class="fill-surface"></rect>
+            <rect x="530" y="40" width="230" height="42" rx="10" class="fill-iface-bg"></rect>
+            <rect x="530" y="70" width="230" height="12" class="fill-iface-bg"></rect>
+            <line x1="530" y1="82" x2="760" y2="82" class="stroke-iface"></line>
+            <rect x="530" y="40" width="230" height="80" rx="10" class="frame-key"></rect>
+            <text x="645" y="58" text-anchor="middle" class="t small iface-ink">«interface»</text>
+            <text x="645" y="76" text-anchor="middle" class="t big">PaymentMethod</text>
+            <text x="645" y="106" text-anchor="middle" class="t mono italic">+ pay(amount): str</text>
+          </g>
+
+          <!-- concrete strategies -->
+          <g id="cls0" opacity="0">
+            <rect x="445" y="340" width="105" height="58" rx="9" class="fill-surface"></rect>
+            <rect x="445" y="340" width="105" height="28" rx="9" class="fill-concrete-bg"></rect>
+            <rect x="445" y="356" width="105" height="12" class="fill-concrete-bg"></rect>
+            <line x1="445" y1="368" x2="550" y2="368" class="stroke-concrete"></line>
+            <rect x="445" y="340" width="105" height="58" rx="9" class="frame-concrete"></rect>
+            <text x="497.5" y="359" text-anchor="middle" class="t name">CardPayment</text>
+            <text x="497.5" y="388" text-anchor="middle" class="t mono">+ pay(amount)</text>
+          </g>
+          <g id="cls1" opacity="0">
+            <rect x="560" y="340" width="105" height="58" rx="9" class="fill-surface"></rect>
+            <rect x="560" y="340" width="105" height="28" rx="9" class="fill-concrete-bg"></rect>
+            <rect x="560" y="356" width="105" height="12" class="fill-concrete-bg"></rect>
+            <line x1="560" y1="368" x2="665" y2="368" class="stroke-concrete"></line>
+            <rect x="560" y="340" width="105" height="58" rx="9" class="frame-concrete"></rect>
+            <text x="612.5" y="359" text-anchor="middle" class="t name">UpiPayment</text>
+            <text x="612.5" y="388" text-anchor="middle" class="t mono">+ pay(amount)</text>
+          </g>
+          <g id="cls2" opacity="0">
+            <rect x="675" y="340" width="105" height="58" rx="9" class="fill-surface"></rect>
+            <rect x="675" y="340" width="105" height="28" rx="9" class="fill-concrete-bg"></rect>
+            <rect x="675" y="356" width="105" height="12" class="fill-concrete-bg"></rect>
+            <line x1="675" y1="368" x2="780" y2="368" class="stroke-concrete"></line>
+            <rect x="675" y="340" width="105" height="58" rx="9" class="frame-concrete"></rect>
+            <text x="727.5" y="359" text-anchor="middle" class="t name">WalletPayment</text>
+            <text x="727.5" y="388" text-anchor="middle" class="t mono">+ pay(amount)</text>
+          </g>
+          <g id="cls3" opacity="0">
+            <rect x="790" y="340" width="105" height="58" rx="9" class="fill-surface"></rect>
+            <rect x="790" y="340" width="105" height="28" rx="9" class="fill-concrete-bg"></rect>
+            <rect x="790" y="356" width="105" height="12" class="fill-concrete-bg"></rect>
+            <line x1="790" y1="368" x2="895" y2="368" class="stroke-concrete"></line>
+            <rect x="790" y="340" width="105" height="58" rx="9" class="frame-concrete"></rect>
+            <text x="842.5" y="359" text-anchor="middle" class="t name" style="font-size: 11.5px">PayLaterPayment</text>
+            <text x="842.5" y="388" text-anchor="middle" class="t mono">+ pay(amount)</text>
+          </g>
+
+          <!-- active strategy marker -->
+          <g id="ring" opacity="0">
+            <rect x="439" y="334" width="117" height="70" rx="12" class="ring"></rect>
+            <text x="497.5" y="424" text-anchor="middle" class="t small key-ink">active strategy</text>
+          </g>
+
+          <g id="tokens"></g>
+        </svg>
+      </div>
+
+      <div class="legend" aria-label="Diagram legend">
+        <span><i class="sw" style="background: var(--iface-bg); border-color: var(--iface)"></i>Interface</span>
+        <span><i class="sw" style="background: var(--concrete-bg); border-color: var(--concrete)"></i>Concrete class</span>
+        <span><i class="sw" style="background: var(--client-bg); border-color: var(--client)"></i>Client</span>
+        <span><i class="sw" style="background: var(--surface); border-color: var(--key); border-width: 3px"></i>Key pattern role</span>
+        <span><i class="sw" style="background: var(--token-bg); border-color: var(--token-bg)"></i>Call</span>
+        <span><i class="sw" style="background: var(--result-bg); border-color: var(--result-bg)"></i>Return value</span>
+      </div>
+
+      <div id="narration" class="narration" aria-live="polite">
+        <div class="step-count" id="stepCount">Step 1 of 8</div>
+        <h2 id="stepTitle">Loading…</h2>
+        <p id="stepWhat"></p>
+        <p class="why"><strong>Why it matters:</strong> <span id="stepWhy"></span></p>
+      </div>
+
+      <div class="controls">
+        <button class="btn" id="prev" type="button" aria-label="Previous step">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="4" x2="18" y2="20"></line><polygon points="14,4 4,12 14,20"></polygon></svg>
+        </button>
+        <button class="btn primary" id="play" type="button">Play all</button>
+        <button class="btn" id="next" type="button" aria-label="Next step">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="6" y1="4" x2="6" y2="20"></line><polygon points="10,4 20,12 10,20"></polygon></svg>
+        </button>
+        <button class="btn" id="replay" type="button">Replay step</button>
+        <div class="dots" id="dots" role="group" aria-label="Jump to step"></div>
+        <label class="speed">Speed
+          <select id="speed">
+            <option value="0.5">0.5×</option>
+            <option value="0.75">0.75×</option>
+            <option value="1" selected>1×</option>
+            <option value="1.5">1.5×</option>
+            <option value="2">2×</option>
+          </select>
+        </label>
+        <div class="voice">
+          <button class="btn voice-toggle" id="voiceBtn" type="button" aria-pressed="false">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+            <span id="voiceLabel" class="vlabel">Voice-over off</span>
+          </button>
+          <label id="voicePick" hidden>
+            <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Voice</span>
+            <select id="voiceSelect"></select>
+          </label>
+          <span class="voice-note" id="voiceNote" hidden></span>
+        </div>
+        <div class="hint">Keyboard: ← and → move between steps, space plays or pauses. With voice-over on, Play waits for the narration before moving on.</div>
+      </div>
+    </section>
+
+    <section class="card code-card" aria-label="Code">
+      <div class="code-head">
+        <h2>Code</h2>
+        <div class="tabs" role="tablist" aria-label="Language">
+          <button class="tab" role="tab" id="tab-py" data-lang="py" aria-selected="true" type="button">Python</button>
+          <button class="tab" role="tab" id="tab-scala" data-lang="scala" aria-selected="false" type="button">Scala 3</button>
+        </div>
+      </div>
+      <div class="code-note" id="codeNote">Highlighted lines match the current step.</div>
+      <pre class="code" id="code" tabindex="0" aria-label="Code for the current step"></pre>
+      <div class="code-legend" aria-label="Code colour legend">
+        <span class="kw">keyword</span><span class="ty">Type</span><span class="fn">function</span><span class="sf">self/this</span><span class="st">"string"</span><span class="nu">number</span><span class="dc">@decorator</span><span class="cm"># comment</span>
+      </div>
+    </section>
+  </div>
+  <div id="examplesPanel" role="tabpanel" aria-labelledby="viewExamples" hidden style="display: flex; flex-direction: column; gap: 18px">
+    <p class="ex-intro">Four places the Strategy pattern shows up in real products. Pick one, try it, then read the code.</p>
+    <div class="ex-picker" id="exPicker" role="tablist" aria-label="Examples"></div>
+    <div class="grid">
+      <section class="card ex-body" id="exBody" role="tabpanel"></section>
+      <section class="card code-card" aria-label="Example code">
+        <div class="code-head">
+          <h2>Code</h2>
+          <div class="tabs" role="tablist" aria-label="Language">
+            <button class="tab" role="tab" data-lang="py" aria-selected="true" type="button">Python</button>
+            <button class="tab" role="tab" data-lang="scala" aria-selected="false" type="button">Scala 3</button>
+          </div>
+        </div>
+        <div class="code-note">Runs as-is. Prices and rates are illustrative.</div>
+        <pre class="code" id="exCode" tabindex="0" aria-label="Example code"></pre>
+        <div class="code-legend" aria-label="Code colour legend">
+          <span class="kw">keyword</span><span class="ty">Type</span><span class="fn">function</span><span class="sf">self/this</span><span class="st">"string"</span><span class="nu">number</span><span class="dc">@decorator</span><span class="cm"># comment</span>
+        </div>
+      </section>
+    </div>
+    <section class="card uses">
+      <h2>Where you already use Strategy</h2>
+      <ul>
+        <li>Python <code>sorted(items, key=...)</code> and <code>max(..., key=...)</code>: the key function is the strategy.</li>
+        <li>Scala <code>list.sorted(using ordering)</code> and Java <code>Comparator</code>: the ordering is the strategy.</li>
+        <li>Machine learning: swapping optimisers (<code>SGD</code>, <code>Adam</code>) into the same training loop in PyTorch.</li>
+        <li>Spark: a custom <code>Partitioner</code> decides how records are spread, without changing the job.</li>
+        <li>Cloud SDKs: configurable retry modes (e.g. boto3's <code>standard</code> and <code>adaptive</code>) are interchangeable retry strategies.</li>
+        <li>Payment gateways, shipping calculators, tax rules and route planners that pick a rule per order, country or user.</li>
+      </ul>
+    </section>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- content ---------- */
+  const STEPS = [
+    { title: "The problem: one class knows every payment",
+      what: "Checkout picks the payment type with if/elif. Each new option adds another branch to the same method.",
+      why: "Checkout has to be reopened and re-tested every time a payment type is added. That breaks the Open/Closed Principle." },
+    { title: "Pull each branch out into its own class",
+      what: "The logic inside each branch moves into CardPayment, UpiPayment and WalletPayment. Checkout keeps only a reference to “a payment method”.",
+      why: "Each algorithm can now change and be tested on its own (Single Responsibility)." },
+    { title: "Give them one shared interface",
+      what: "All three classes implement PaymentMethod.pay(amount). Checkout only knows about the interface, never the concrete classes.",
+      why: "Checkout depends on an abstraction, not on details (Dependency Inversion). Any class that implements the interface fits." },
+    { title: "The client plugs one in",
+      what: "App creates Checkout(CardPayment()). The choice of algorithm is made outside Checkout.",
+      why: "Checkout never names a concrete class, so whoever configures it decides the behaviour." },
+    { title: "Checkout delegates the call",
+      what: "pay(1200) travels through the interface to CardPayment, and the result comes back to App.",
+      why: "Checkout doesn't know or care which algorithm ran. It just forwards the call." },
+    { title: "Swap the strategy while the program runs",
+      what: "App calls set_method(UpiPayment()). Only the reference inside Checkout changes.",
+      why: "Behaviour changes at runtime with no edit and no restart." },
+    { title: "Same call, new behaviour",
+      what: "The exact same pay(1200) now ends up in UpiPayment.",
+      why: "One call site, many interchangeable algorithms. This is the whole point of Strategy." },
+    { title: "Add a payment type without touching Checkout",
+      what: "PayLaterPayment implements PaymentMethod and plugs straight in.",
+      why: "Checkout: 0 lines changed. New behaviour is added, not edited in (Open/Closed)." }
+  ];
+
+  // Spoken versions of the narration: same meaning, phrased for listening
+  const SAY = [
+    { what: "Here's the problem. Checkout chooses the payment type with an if-else chain. Every new payment option adds another branch to the same method.",
+      why: "So Checkout has to be reopened and re-tested every time we add a payment type. That breaks the open-closed principle." },
+    { what: "Now we pull each branch out into its own class: card payment, U P I payment, and wallet payment. Checkout keeps just one reference to a payment method.",
+      why: "Each algorithm can now change, and be tested, on its own. That's single responsibility." },
+    { what: "Next, all three classes share one interface, called payment method, with a single pay method. Checkout only knows about this interface.",
+      why: "Checkout depends on an abstraction, not on the details. That's dependency inversion. Any class that implements the interface will fit." },
+    { what: "The app decides which payment to use, and passes a card payment into Checkout.",
+      why: "Checkout never names a concrete class. Whoever sets it up chooses the behaviour." },
+    { what: "When the app calls pay, Checkout simply forwards the call through the interface to the card payment. The result comes back to the app.",
+      why: "Checkout doesn't know, or care, which algorithm actually ran." },
+    { what: "Now the app swaps in the U P I payment while the program is running. Only the reference inside Checkout changes.",
+      why: "Behaviour changes at runtime, with no code edits and no restart." },
+    { what: "The exact same pay call now ends up in the U P I payment.",
+      why: "One call site, many interchangeable algorithms. That's the whole point of the strategy pattern." },
+    { what: "Finally, we add a brand new pay-later option. It implements the interface and plugs straight in.",
+      why: "And Checkout? Zero lines changed. New behaviour is added, not edited in. That's the open-closed principle in action." }
+  ];
+
+  const CODE = {
+    py: {
+      problem: [
+        'class Checkout:',
+        '    def pay(self, kind: str, amount: float) -> str:',
+        '        if kind == "card":',
+        '            return f"Paid ₹{amount} by card"',
+        '        elif kind == "upi":',
+        '            return f"Paid ₹{amount} via UPI"',
+        '        elif kind == "wallet":',
+        '            return f"Paid ₹{amount} from wallet"',
+        '        raise ValueError(kind)   # every new type edits this method'
+      ],
+      solution: [
+        'from abc import ABC, abstractmethod',
+        '',
+        'class PaymentMethod(ABC):',
+        '    @abstractmethod',
+        '    def pay(self, amount: float) -> str: ...',
+        '',
+        'class CardPayment(PaymentMethod):',
+        '    def pay(self, amount): return f"Paid ₹{amount} by card"',
+        '',
+        'class UpiPayment(PaymentMethod):',
+        '    def pay(self, amount): return f"Paid ₹{amount} via UPI"',
+        '',
+        'class WalletPayment(PaymentMethod):',
+        '    def pay(self, amount): return f"Paid ₹{amount} from wallet"',
+        '',
+        'class Checkout:',
+        '    def __init__(self, method: PaymentMethod):',
+        '        self._method = method',
+        '',
+        '    def set_method(self, method: PaymentMethod) -> None:',
+        '        self._method = method',
+        '',
+        '    def pay(self, amount: float) -> str:',
+        '        return self._method.pay(amount)',
+        '',
+        'checkout = Checkout(CardPayment())',
+        'print(checkout.pay(1200))',
+        'checkout.set_method(UpiPayment())',
+        'print(checkout.pay(1200))',
+        '',
+        'class PayLaterPayment(PaymentMethod):   # new: nothing above changes',
+        '    def pay(self, amount): return f"Paid ₹{amount} with PayLater"'
+      ],
+      future: [30, 31, 32],
+      hl: { 1: [3, 4, 5, 6, 7, 8], 2: [7, 8, 10, 11, 13, 14], 3: [1, 3, 4, 5, 7, 10, 13], 4: [16, 17, 18, 26],
+            5: [23, 24, 27, 8], 6: [20, 21, 28], 7: [23, 24, 29, 11], 8: [31, 32] }
+    },
+    scala: {
+      problem: [
+        'class Checkout:',
+        '  def pay(kind: String, amount: BigDecimal): String = kind match',
+        '    case "card"   => s"Paid ₹$amount by card"',
+        '    case "upi"    => s"Paid ₹$amount via UPI"',
+        '    case "wallet" => s"Paid ₹$amount from wallet"',
+        '    case other    => throw IllegalArgumentException(other)',
+        '    // every new type edits this method'
+      ],
+      solution: [
+        'trait PaymentMethod:',
+        '  def pay(amount: BigDecimal): String',
+        '',
+        'class CardPayment extends PaymentMethod:',
+        '  def pay(amount: BigDecimal) = s"Paid ₹$amount by card"',
+        '',
+        'class UpiPayment extends PaymentMethod:',
+        '  def pay(amount: BigDecimal) = s"Paid ₹$amount via UPI"',
+        '',
+        'class WalletPayment extends PaymentMethod:',
+        '  def pay(amount: BigDecimal) = s"Paid ₹$amount from wallet"',
+        '',
+        'class Checkout(private var method: PaymentMethod):',
+        '  def setMethod(m: PaymentMethod): Unit = method = m',
+        '  def pay(amount: BigDecimal): String = method.pay(amount)',
+        '',
+        '@main def demo(): Unit =',
+        '  val checkout = Checkout(CardPayment())',
+        '  println(checkout.pay(1200))',
+        '  checkout.setMethod(UpiPayment())',
+        '  println(checkout.pay(1200))',
+        '',
+        'class PayLaterPayment extends PaymentMethod:  // new: nothing above changes',
+        '  def pay(amount: BigDecimal) = s"Paid ₹$amount with PayLater"'
+      ],
+      future: [22, 23, 24],
+      hl: { 1: [3, 4, 5], 2: [4, 5, 7, 8, 10, 11], 3: [1, 2, 4, 7, 10], 4: [13, 18],
+            5: [15, 19, 5], 6: [14, 20], 7: [15, 21, 8], 8: [23, 24] }
+    }
+  };
+
+  /* ---------- state ---------- */
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let lang = "py";
+  let current = 0;
+  let stopAt = null;
+  let tl = null;
+  const HOLD = 2.8;
+
+  let autoplay = false;      // "Play" runs steps one after another
+  let animDone = false;      // current step's animation has finished
+  let speechDone = true;     // current step's narration has finished
+  let advanceTimer = null;
+  let speed = 1;
+
+  const synth = "speechSynthesis" in window ? window.speechSynthesis : null;
+  let voiceOn = false;
+  let voices = [];
+  let chosenVoice = null;
+  let speechToken = 0;
+
+  const $ = (id) => document.getElementById(id);
+  const SVGNS = "http://www.w3.org/2000/svg";
+
+  /* ---------- tokens (messages travelling between objects) ---------- */
+  const VIEW_W = 910;
+  function makeToken(id, label, isResult) {
+    const g = document.createElementNS(SVGNS, "g");
+    g.setAttribute("id", id);
+    g.setAttribute("class", "token" + (isResult ? " result" : ""));
+    g.setAttribute("opacity", "0");
+    const r = document.createElementNS(SVGNS, "rect");
+    const t = document.createElementNS(SVGNS, "text");
+    t.setAttribute("text-anchor", "middle");
+    t.setAttribute("y", "4");
+    t.textContent = label;
+    g.appendChild(r); g.appendChild(t);
+    $("tokens").appendChild(g);
+    const w = Math.ceil(t.getComputedTextLength()) + 22;
+    r.setAttribute("x", String(-w / 2)); r.setAttribute("y", "-13");
+    r.setAttribute("width", String(w)); r.setAttribute("height", "26"); r.setAttribute("rx", "13");
+    g.dataset.w = String(w);
+    return g;
+  }
+  const clampX = (g, x) => {
+    const half = Number(g.dataset.w) / 2 + 4;
+    return Math.min(Math.max(x, half), VIEW_W - half);
+  };
+  const P_APP = [75, 160], P_CHK = [295, 135], P_IF = [645, 152];
+  const P_CLS = (i) => [497.5 + 115 * i, 318];
+
+  function travel(g, points, segDur) {
+    const t = gsap.timeline();
+    t.set(g, { x: clampX(g, points[0][0]), y: points[0][1] });
+    t.to(g, { opacity: 1, duration: 0.2 });
+    for (let i = 1; i < points.length; i++) {
+      t.to(g, { x: clampX(g, points[i][0]), y: points[i][1], duration: segDur, ease: "power1.inOut" });
+    }
+    t.to(g, { opacity: 0, duration: 0.25 }, "+=0.25");
+    return t;
+  }
+  function pulse(sel) {
+    return gsap.timeline()
+      .to(sel, { scale: 1.06, duration: 0.18, transformOrigin: "50% 50%" })
+      .to(sel, { scale: 1, duration: 0.22 });
+  }
+  function flash() {
+    return gsap.timeline()
+      .to("#checkoutFlash", { opacity: 1, duration: 0.15 })
+      .to("#checkoutFlash", { opacity: 0, duration: 0.6 });
+  }
+  function shake() {
+    return gsap.timeline()
+      .to("#checkout", { x: -5, duration: 0.06 })
+      .to("#checkout", { x: 5, duration: 0.08, repeat: 3, yoyo: true })
+      .to("#checkout", { x: 0, duration: 0.06 });
+  }
+
+  /* ---------- timeline ---------- */
+  function buildTimeline() {
+    const tokCreate = makeToken("tokCreate", "Checkout(CardPayment())", false);
+    const tokPay1 = makeToken("tokPay1", "pay(₹1,200)", false);
+    const tokRes1 = makeToken("tokRes1", "\"Paid ₹1200 by card\"", true);
+    const tokSet = makeToken("tokSet", "set_method(UpiPayment())", false);
+    const tokPay2 = makeToken("tokPay2", "pay(₹1,200)", false);
+    const tokRes2 = makeToken("tokRes2", "\"Paid ₹1200 via UPI\"", true);
+
+    // concrete classes start "inside" Checkout, where the branches are
+    [0, 1, 2].forEach((i) => {
+      gsap.set("#cls" + i, {
+        x: 192 - (445 + 115 * i), y: (194 + 26 * i) - 340,
+        scale: 0.55, transformOrigin: "0% 0%", opacity: 0
+      });
+    });
+    gsap.set("#cls3", { y: 30, opacity: 0 });
+    gsap.set("#badgeWarn", { y: 6 });
+
+    tl = gsap.timeline({ paused: true, onUpdate: onTick, onComplete: refreshPlay });
+    const hold = () => tl.to({}, { duration: HOLD });
+
+    // 1 — the problem
+    tl.addLabel("s1");
+    tl.to("#row0", { opacity: 1, duration: 0.45 }, "+=0.3")
+      .to("#row1", { opacity: 1, duration: 0.45 }, "+=0.4")
+      .add(flash(), "<")
+      .to("#row2", { opacity: 1, duration: 0.45 }, "+=0.4")
+      .add(flash(), "<")
+      .add(shake(), "<")
+      .to("#badgeWarn", { opacity: 1, y: 0, duration: 0.4 }, "<0.2");
+    tl.addLabel("e1"); hold();
+
+    // 2 — extract classes
+    tl.addLabel("s2");
+    tl.to("#badgeWarn", { opacity: 0, duration: 0.3 })
+      .to(["#row0", "#row1", "#row2"], { opacity: 0, duration: 0.3 }, "<")
+      .set(["#cls0", "#cls1", "#cls2"], { opacity: 1 }, "<0.05")
+      .to(["#cls0", "#cls1", "#cls2"], { x: 0, y: 0, scale: 1, duration: 1.0, ease: "power2.inOut", stagger: 0.18 })
+      .to("#clean", { opacity: 1, duration: 0.4 }, "-=0.5");
+    tl.addLabel("e2"); hold();
+
+    // 3 — shared interface
+    tl.addLabel("s3");
+    tl.fromTo("#iface", { opacity: 0, y: -16 }, { opacity: 1, y: 0, duration: 0.5, immediateRender: false })
+      .to("#real", { opacity: 1, duration: 0.5 })
+      .fromTo("#assocLine", { strokeDashoffset: 160 }, { strokeDashoffset: 0, duration: 0.6, ease: "power1.inOut", immediateRender: false })
+      .to(["#assocHead", "#assocLabel"], { opacity: 1, duration: 0.3 });
+    tl.addLabel("e3"); hold();
+
+    // 4 — client plugs one in
+    tl.addLabel("s4");
+    tl.add(travel(tokCreate, [P_APP, P_CHK], 0.9))
+      .to("#ring", { opacity: 1, duration: 0.4 }, "-=0.3")
+      .add(pulse("#cls0"), "<");
+    tl.addLabel("e4"); hold();
+
+    // 5 — delegate the call
+    tl.addLabel("s5");
+    tl.add(travel(tokPay1, [P_APP, P_CHK, P_IF, P_CLS(0)], 0.55))
+      .add(pulse("#cls0"), "-=0.3")
+      .add(travel(tokRes1, [P_CLS(0), P_IF, P_CHK, P_APP], 0.5));
+    tl.addLabel("e5"); hold();
+
+    // 6 — swap at runtime
+    tl.addLabel("s6");
+    tl.add(travel(tokSet, [P_APP, P_CHK], 0.9))
+      .to("#ring", { x: 115, duration: 0.7, ease: "power2.inOut" }, "-=0.35")
+      .add(pulse("#cls1"));
+    tl.addLabel("e6"); hold();
+
+    // 7 — same call, new behaviour
+    tl.addLabel("s7");
+    tl.add(travel(tokPay2, [P_APP, P_CHK, P_IF, P_CLS(1)], 0.55))
+      .add(pulse("#cls1"), "-=0.3")
+      .add(travel(tokRes2, [P_CLS(1), P_IF, P_CHK, P_APP], 0.5));
+    tl.addLabel("e7"); hold();
+
+    // 8 — extend without editing
+    tl.addLabel("s8");
+    tl.to("#cls3", { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" })
+      .to("#real3", { opacity: 1, duration: 0.4 })
+      .to("#badgeOk", { opacity: 1, duration: 0.4 })
+      .add(pulse("#checkout"), "<");
+    tl.addLabel("e8");
+    tl.to({}, { duration: 0.3 });
+  }
+
+  const startOf = (k) => tl.labels["s" + k];
+  const endOf = (k) => tl.labels["e" + k];
+
+  /* ---------- playback ---------- */
+  function onTick() {
+    if (stopAt !== null && tl.time() >= stopAt - 1e-4) {
+      const t = stopAt; stopAt = null; tl.pause(t);
+      animDone = true;
+      maybeAdvance();
+    }
+    const t = tl.time();
+    let k = 1;
+    for (let i = 1; i <= STEPS.length; i++) if (t >= startOf(i) - 1e-4) k = i;
+    if (k !== current) showStep(k);
+    refreshPlay();
+  }
+  function playUntil(target) {
+    animDone = false;
+    if (reduceMotion) {
+      stopAt = null; tl.pause(target); animDone = true; onTick(); maybeAdvance(); return;
+    }
+    stopAt = target;
+    tl.play();
+    refreshPlay();
+  }
+  function goStep(k) {
+    k = Math.max(1, Math.min(STEPS.length, k));
+    clearTimeout(advanceTimer);
+    stopAt = null;
+    tl.pause(startOf(k));
+    onTick();
+    speakStep(k);
+    playUntil(endOf(k));
+  }
+  // Move to the next step only when the animation AND the narration are both finished.
+  function maybeAdvance() {
+    if (!autoplay || !animDone || (voiceOn && !speechDone)) return;
+    clearTimeout(advanceTimer);
+    if (current >= STEPS.length) { autoplay = false; refreshPlay(); return; }
+    const delay = voiceOn ? 700 : (HOLD * 1000) / speed;
+    advanceTimer = setTimeout(() => { if (autoplay) goStep(current + 1); }, delay);
+  }
+  function stopAutoplay() {
+    autoplay = false;
+    clearTimeout(advanceTimer);
+    stopAt = null;
+    tl.pause();
+    stopSpeech();
+    refreshPlay();
+  }
+  function togglePlay() {
+    if (autoplay) { stopAutoplay(); return; }
+    autoplay = true;
+    const finished = current >= STEPS.length && animDone;
+    goStep(finished ? 1 : current);
+    refreshPlay();
+  }
+  function refreshPlay() {
+    const btn = $("play");
+    if (autoplay) btn.textContent = "Pause";
+    else if (current >= STEPS.length && animDone) btn.textContent = "Play again";
+    else btn.textContent = current <= 1 ? "Play all" : "Play from here";
+    $("prev").disabled = current <= 1;
+    $("next").disabled = current >= STEPS.length;
+  }
+
+  /* ---------- voice-over (browser's built-in speech, free, no server) ---------- */
+  function stopSpeech() {
+    speechToken++;
+    if (synth) synth.cancel();
+    speechDone = true;
+    markSpeaking(null);
+  }
+  function markSpeaking(id) {
+    ["stepTitle", "stepWhat", "stepWhy"].forEach((x) => $(x).classList.toggle("speaking", x === id));
+  }
+  function sentences(text) {
+    // short utterances avoid a Chrome bug that cuts off long speech
+    return text.match(/[^.!?]+[.!?]*/g).map((s) => s.trim()).filter(Boolean);
+  }
+  function speakStep(k) {
+    stopSpeech();
+    if (!voiceOn || !synth) return;
+    const token = speechToken;
+    speechDone = false;
+    const s = STEPS[k - 1], v = SAY[k - 1];
+    const parts = [
+      { id: "stepTitle", text: "Step " + k + ". " + s.title + "." },
+      { id: "stepWhat", text: v.what },
+      { id: "stepWhy", text: "Why it matters. " + v.why }
+    ];
+    const queue = [];
+    parts.forEach((p) => sentences(p.text).forEach((t) => queue.push({ id: p.id, text: t })));
+    setTimeout(() => {           // give cancel() a moment before queueing (Chrome)
+      if (token !== speechToken) return;
+      queue.forEach((q, i) => {
+        const u = new SpeechSynthesisUtterance(q.text);
+        if (chosenVoice) { u.voice = chosenVoice; u.lang = chosenVoice.lang; } else { u.lang = "en-US"; }
+        u.rate = Math.min(2, Math.max(0.5, speed));
+        u.onstart = () => { if (token === speechToken) markSpeaking(q.id); };
+        if (i === queue.length - 1) {
+          const done = () => {
+            if (token !== speechToken) return;
+            speechDone = true; markSpeaking(null); maybeAdvance();
+          };
+          u.onend = done; u.onerror = done;
+        }
+        synth.speak(u);
+      });
+    }, 80);
+  }
+  function loadVoices() {
+    if (!synth) return;
+    voices = synth.getVoices().filter((v) => /^en(-|_|$)/i.test(v.lang));
+    const sel = $("voiceSelect");
+    const prev = chosenVoice && chosenVoice.name;
+    sel.innerHTML = "";
+    voices.forEach((v, i) => {
+      const o = document.createElement("option");
+      o.value = String(i);
+      o.textContent = v.name + " (" + v.lang + ")";
+      sel.appendChild(o);
+    });
+    $("voicePick").hidden = !voiceOn || voices.length === 0;
+    if (!voices.length) { chosenVoice = null; return; }
+    let idx = voices.findIndex((v) => v.name === prev);
+    if (idx < 0) idx = voices.findIndex((v) => /natural|neural|google|samantha|daniel/i.test(v.name));
+    if (idx < 0) idx = voices.findIndex((v) => v.default);
+    if (idx < 0) idx = 0;
+    sel.value = String(idx);
+    chosenVoice = voices[idx];
+  }
+  function setVoice(on) {
+    voiceOn = on;
+    document.querySelectorAll(".voice-toggle").forEach((b) => {
+      b.setAttribute("aria-pressed", String(on));
+      b.querySelector(".vlabel").textContent = on ? "Voice-over on" : "Voice-over off";
+    });
+    $("voicePick").hidden = !on || voices.length === 0;
+    if (on && view === "story") speakStep(current);   // runs inside the click, which browsers require for audio
+    else { stopSpeech(); maybeAdvance(); }
+  }
+
+  /* ---------- step UI ---------- */
+  function showStep(k) {
+    const first = current === 0;
+    current = k;
+    const s = STEPS[k - 1];
+    const box = $("narration");
+    const apply = () => {
+      $("stepCount").textContent = "Step " + k + " of " + STEPS.length;
+      $("stepTitle").textContent = s.title;
+      $("stepWhat").textContent = s.what;
+      $("stepWhy").textContent = s.why;
+      box.classList.remove("fading");
+    };
+    if (first || reduceMotion) apply();
+    else { box.classList.add("fading"); setTimeout(apply, 180); }
+    document.querySelectorAll(".dot").forEach((d, i) => {
+      if (i + 1 === k) d.setAttribute("aria-current", "step"); else d.removeAttribute("aria-current");
+      d.classList.toggle("done", i + 1 < k);
+    });
+    renderCode(true);
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  const KEYWORDS = {
+    py: new Set(("and as assert async await break class continue def del elif else except finally for from " +
+                 "global if import in is lambda nonlocal not or pass raise return try while with yield").split(" ")),
+    scala: new Set(("abstract case catch class def do else enum extends extension final finally for given if " +
+                    "implicit import lazy match new object override package private protected return sealed super " +
+                    "then throw trait try type using val var while with yield").split(" "))
+  };
+  const LITERALS = new Set(["None", "True", "False", "true", "false", "null"]);
+  const SELF = new Set(["self", "this"]);
+  // Groups: 1 line comment | 2 multi-line opener | 3 string (closed, or unclosed to end of line)
+  //         4 decorator/annotation | 5 number | 6 identifier
+  const TOKEN_RE = {
+    py: /(#.*$)|([rbfuRBFU]{0,2}(?:"""|'''))|([rbfuRBFU]{0,2}(?:"(?:[^"\\]|\\.)*(?:"|$)|'(?:[^'\\]|\\.)*(?:'|$)))|(@\w+)|(\b\d[\d_]*(?:\.\d+)?\b)|([A-Za-z_]\w*)/g,
+    scala: /(\/\/.*$)|(\/\*|[sfr]?""")|([sfr]?"(?:[^"\\]|\\.)*(?:"|$))|(@\w+)|(\b\d[\d_]*(?:\.\d+)?\b)|([A-Za-z_]\w*)/g
+  };
+  const span = (cls, text) => '<span class="' + cls + '">' + escapeHtml(text) + "</span>";
+
+  // Highlights a whole snippet line by line. `open` remembers a """…""" string or /* … */
+  // comment that is still open at the end of a line, so following lines keep its colour.
+  // Works on unfinished or broken code: nothing is parsed or validated.
+  function highlightLines(lines, language) {
+    const kw = KEYWORDS[language];
+    let open = null;                       // { close: '"""' | "'''" | '*/', cls: 'st' | 'cm' }
+    return lines.map((line) => {
+      let out = "", pos = 0;
+      if (open) {
+        const end = line.indexOf(open.close);
+        if (end < 0) return span(open.cls, line);
+        out += span(open.cls, line.slice(0, end + open.close.length));
+        pos = end + open.close.length;
+        open = null;
+      }
+      const re = new RegExp(TOKEN_RE[language].source, "g");
+      re.lastIndex = pos;
+      let last = pos, prev = "", m;
+      while ((m = re.exec(line)) !== null) {
+        out += escapeHtml(line.slice(last, m.index));
+        const s = m[0];
+        if (m[2]) {                        // start of a multi-line string or comment
+          const close = s.endsWith("/*") ? "*/" : s.slice(-3);
+          const cls = close === "*/" ? "cm" : "st";
+          const end = line.indexOf(close, re.lastIndex);
+          if (end < 0) {
+            out += span(cls, line.slice(m.index));
+            open = { close, cls };
+            last = line.length;
+            break;
+          }
+          out += span(cls, line.slice(m.index, end + close.length));
+          re.lastIndex = last = end + close.length;
+          prev = "";
+          continue;
+        }
+        let cls = null;
+        if (m[1]) cls = "cm";
+        else if (m[3]) cls = "st";
+        else if (m[4]) cls = "dc";
+        else if (m[5]) cls = "nu";
+        else if (kw.has(s)) cls = "kw";
+        else if (LITERALS.has(s)) cls = "nu";
+        else if (SELF.has(s)) cls = "sf";
+        else if (prev === "def") cls = "fn";
+        else if (/^[A-Z]/.test(s)) cls = "ty";
+        prev = m[6] ? s : "";
+        out += cls ? span(cls, s) : escapeHtml(s);
+        last = re.lastIndex;
+      }
+      return out + escapeHtml(line.slice(last));
+    });
+  }
+
+  function renderCode(animateNew) {
+    const src = CODE[lang];
+    const k = current || 1;
+    const lines = k === 1 ? src.problem : src.solution;
+    const hl = new Set(src.hl[k] || []);
+    const hidden = k === 1 ? new Set() : (k < 8 ? new Set(src.future) : new Set());
+    const newly = k === 8 ? new Set(src.future) : new Set();
+    $("codeNote").textContent = k === 1
+      ? "Before: the if/elif version. Highlighted lines are the branches that keep growing."
+      : "After: the Strategy version. Highlighted lines match the current step.";
+    const colored = highlightLines(lines, lang);
+    let html = "";
+    lines.forEach((line, i) => {
+      const n = i + 1;
+      if (hidden.has(n)) return;
+      const cls = ["ln"];
+      if (hl.has(n)) cls.push("hl");
+      else if (hl.size) cls.push("dimmed");
+      if (animateNew && newly.has(n) && !reduceMotion) cls.push("new");
+      html += '<span class="' + cls.join(" ") + '"><span class="n">' + n + "</span>" + (colored[i] || " ") + "</span>";
+    });
+    const pre = $("code");
+    pre.innerHTML = html;
+    const firstHl = pre.querySelector(".ln.hl");
+    if (firstHl) {
+      const top = Math.max(firstHl.offsetTop - 48, 0);
+      pre.scrollTo({ top, behavior: reduceMotion ? "auto" : "smooth" });
+    }
+  }
+
+  /* ---------- real-world examples ---------- */
+  const EXAMPLES = [
+    {
+      id: "ride", domain: "Ride-hailing", title: "Ride fares",
+      situation: "A ride app charges one way for a normal trip, more at peak demand, and less for a shared ride. Pricing rules change every few weeks and new ones keep being requested.",
+      iface: "PricingStrategy", strategies: ["NormalPricing", "SurgePricing", "PoolPricing"],
+      why: "Booking a ride never changes; only the fare formula does. Each formula is a strategy chosen per ride, so a new pricing rule is a new class, not an edit to the booking code.",
+      watch: "Who picks the strategy? Usually a small factory or config (city, time, demand) decides, so that choice stays out of Ride too.",
+      py: `from abc import ABC, abstractmethod
+
+
+class PricingStrategy(ABC):
+    @abstractmethod
+    def fare(self, km: float, minutes: float) -> float: ...
+
+
+class NormalPricing(PricingStrategy):
+    def fare(self, km: float, minutes: float) -> float:
+        return 50 + 12 * km + 1.5 * minutes
+
+
+class SurgePricing(PricingStrategy):
+    def __init__(self, multiplier: float):
+        self.multiplier = multiplier
+
+    def fare(self, km: float, minutes: float) -> float:
+        return NormalPricing().fare(km, minutes) * self.multiplier
+
+
+class PoolPricing(PricingStrategy):
+    def fare(self, km: float, minutes: float) -> float:
+        return NormalPricing().fare(km, minutes) * 0.7    # shared ride discount
+
+
+class Ride:
+    def __init__(self, pricing: PricingStrategy):
+        self.pricing = pricing
+
+    def quote(self, km: float, minutes: float) -> str:
+        return f"₹{self.pricing.fare(km, minutes):.0f}"
+
+
+for pricing in (NormalPricing(), SurgePricing(1.8), PoolPricing()):
+    print(type(pricing).__name__, Ride(pricing).quote(km=8, minutes=25))`,
+      scala: `trait PricingStrategy:
+  def name: String
+  def fare(km: Double, minutes: Double): Double
+
+object NormalPricing extends PricingStrategy:
+  val name = "Normal"
+  def fare(km: Double, minutes: Double): Double = 50 + 12 * km + 1.5 * minutes
+
+class SurgePricing(multiplier: Double) extends PricingStrategy:
+  val name = s"Surge x\$multiplier"
+  def fare(km: Double, minutes: Double): Double = NormalPricing.fare(km, minutes) * multiplier
+
+object PoolPricing extends PricingStrategy:
+  val name = "Pool"
+  def fare(km: Double, minutes: Double): Double = NormalPricing.fare(km, minutes) * 0.7
+
+class Ride(pricing: PricingStrategy):
+  def quote(km: Double, minutes: Double): String = f"₹\${pricing.fare(km, minutes)}%.0f"
+
+@main def rideDemo(): Unit =
+  for p <- List(NormalPricing, SurgePricing(1.8), PoolPricing) do
+    println(s"\${p.name}: \${Ride(p).quote(8, 25)}")`,
+      widget: "ride"
+    },
+    {
+      id: "sort", domain: "E-commerce search", title: "Sorting results",
+      situation: "A shop's search page lets shoppers sort the same results by lowest price, top rating or newest. Marketing wants to add \u201cbest sellers\u201d next month.",
+      iface: "a sort function / Ordering", strategies: ["price low to high", "top rated", "newest"],
+      why: "The search stays the same; only the ordering rule changes. Here the strategy is just a function (Python) or an Ordering (Scala), the lightest form of the pattern.",
+      watch: "No class hierarchy needed when a strategy is a single operation. Reach for classes only when a strategy carries state or several methods.",
+      py: `from dataclasses import dataclass
+from typing import Callable
+
+
+@dataclass(frozen=True)
+class Product:
+    name: str
+    price: int
+    rating: float
+    days_listed: int
+
+
+SortStrategy = Callable[[list[Product]], list[Product]]
+
+SORTS: dict[str, SortStrategy] = {
+    "price_low_high": lambda ps: sorted(ps, key=lambda p: p.price),
+    "top_rated": lambda ps: sorted(ps, key=lambda p: p.rating, reverse=True),
+    "newest": lambda ps: sorted(ps, key=lambda p: p.days_listed),
+}
+
+
+def search_results(products: list[Product], sort_by: str) -> list[str]:
+    return [p.name for p in SORTS[sort_by](products)]
+
+
+catalog = [
+    Product("Kettle", 1499, 4.2, 30),
+    Product("Toaster", 999, 4.6, 5),
+    Product("Mixer", 2999, 4.4, 12),
+]
+for option in SORTS:
+    print(option, search_results(catalog, option))`,
+      scala: `final case class Product(name: String, price: Int, rating: Double, daysListed: Int)
+
+// each Ordering is a strategy
+val sorts: List[(String, Ordering[Product])] = List(
+  "priceLowHigh" -> Ordering.by[Product, Int](_.price),
+  "topRated"     -> Ordering.by[Product, Double](_.rating).reverse,
+  "newest"       -> Ordering.by[Product, Int](_.daysListed)
+)
+
+def searchResults(products: List[Product], ordering: Ordering[Product]): List[String] =
+  products.sorted(using ordering).map(_.name)
+
+@main def sortDemo(): Unit =
+  val catalog = List(
+    Product("Kettle", 1499, 4.2, 30),
+    Product("Toaster", 999, 4.6, 5),
+    Product("Mixer", 2999, 4.4, 12)
+  )
+  for (label, ordering) <- sorts do
+    println(s"\$label \${searchResults(catalog, ordering)}")`,
+      widget: "sort"
+    },
+    {
+      id: "ship", domain: "Online orders", title: "Shipping cost",
+      situation: "Checkout offers standard and express delivery, and a promotion makes shipping free above a minimum order value. Finance changes the rates and the threshold often.",
+      iface: "ShippingStrategy", strategies: ["StandardShipping", "ExpressShipping", "FreeAbove"],
+      why: "Order totals are always \u201citems + shipping\u201d; only the shipping rule varies. Each rule is a strategy, and FreeAbove even wraps another strategy as its fallback.",
+      watch: "Strategies can be composed: FreeAbove(499, StandardShipping) reuses an existing rule instead of copying it.",
+      py: `from abc import ABC, abstractmethod
+
+
+class ShippingStrategy(ABC):
+    @abstractmethod
+    def cost(self, weight_kg: float, order_total: float) -> float: ...
+
+
+class StandardShipping(ShippingStrategy):
+    def cost(self, weight_kg: float, order_total: float) -> float:
+        return 40 + 10 * weight_kg
+
+
+class ExpressShipping(ShippingStrategy):
+    def cost(self, weight_kg: float, order_total: float) -> float:
+        return 120 + 25 * weight_kg
+
+
+class FreeAbove(ShippingStrategy):
+    """Free over a threshold,
+    otherwise falls back to another strategy."""
+
+    def __init__(self, threshold: float, otherwise: ShippingStrategy):
+        self.threshold, self.otherwise = threshold, otherwise
+
+    def cost(self, weight_kg: float, order_total: float) -> float:
+        if order_total >= self.threshold:
+            return 0.0
+        return self.otherwise.cost(weight_kg, order_total)
+
+
+class Order:
+    def __init__(self, total: float, weight_kg: float, shipping: ShippingStrategy):
+        self.total, self.weight_kg, self.shipping = total, weight_kg, shipping
+
+    def grand_total(self) -> float:
+        return self.total + self.shipping.cost(self.weight_kg, self.total)
+
+
+for shipping in (StandardShipping(), ExpressShipping(), FreeAbove(499, StandardShipping())):
+    print(type(shipping).__name__, Order(650, 2, shipping).grand_total())`,
+      scala: `trait ShippingStrategy:
+  def cost(weightKg: Double, orderTotal: Double): Double
+
+object StandardShipping extends ShippingStrategy:
+  def cost(weightKg: Double, orderTotal: Double): Double = 40 + 10 * weightKg
+
+object ExpressShipping extends ShippingStrategy:
+  def cost(weightKg: Double, orderTotal: Double): Double = 120 + 25 * weightKg
+
+/* Free over a threshold,
+   otherwise falls back to another strategy */
+class FreeAbove(threshold: Double, otherwise: ShippingStrategy) extends ShippingStrategy:
+  def cost(weightKg: Double, orderTotal: Double): Double =
+    if orderTotal >= threshold then 0 else otherwise.cost(weightKg, orderTotal)
+
+final case class Order(total: Double, weightKg: Double, shipping: ShippingStrategy):
+  def grandTotal: Double = total + shipping.cost(weightKg, total)
+
+@main def shippingDemo(): Unit =
+  val options: List[(String, ShippingStrategy)] = List(
+    "Standard" -> StandardShipping,
+    "Express" -> ExpressShipping,
+    "FreeAbove(499)" -> FreeAbove(499, StandardShipping)
+  )
+  for (label, s) <- options do println(s"\$label \${Order(650, 2, s).grandTotal}")`,
+      widget: "ship"
+    },
+    {
+      id: "retry", domain: "Distributed systems", title: "Retry back-off",
+      situation: "A service calls a flaky payment API. When a call fails, it should wait before retrying. How long to wait differs per dependency, and the team wants to tune it without touching the client.",
+      iface: "BackoffStrategy", strategies: ["FixedDelay", "ExponentialBackoff", "FullJitter"],
+      why: "The retry loop is always \u201ctry, wait, try again\u201d; only the waiting rule changes. Swapping the back-off strategy changes retry behaviour without touching the client code.",
+      watch: "Exponential back-off with random jitter avoids thousands of clients retrying at the exact same moment after an outage.",
+      py: `import random
+from abc import ABC, abstractmethod
+
+
+class BackoffStrategy(ABC):
+    @abstractmethod
+    def delay(self, attempt: int) -> float: ...
+
+
+class FixedDelay(BackoffStrategy):
+    def __init__(self, seconds: float = 1.0):
+        self.seconds = seconds
+
+    def delay(self, attempt: int) -> float:
+        return self.seconds
+
+
+class ExponentialBackoff(BackoffStrategy):
+    def __init__(self, base: float = 0.5, cap: float = 8.0):
+        self.base, self.cap = base, cap
+
+    def delay(self, attempt: int) -> float:
+        return min(self.cap, self.base * 2 ** (attempt - 1))
+
+
+class FullJitter(ExponentialBackoff):
+    def __init__(self, base: float = 0.5, cap: float = 8.0, rng: random.Random | None = None):
+        super().__init__(base, cap)
+        self.rng = rng or random.Random(42)
+
+    def delay(self, attempt: int) -> float:
+        return self.rng.uniform(0, super().delay(attempt))
+
+
+class RetryingClient:
+    def __init__(self, backoff: BackoffStrategy, max_attempts: int = 5):
+        self.backoff, self.max_attempts = backoff, max_attempts
+
+    def schedule(self) -> list[float]:
+        # a real client would call time.sleep(delay) after each failed attempt
+        return [round(self.backoff.delay(a), 2) for a in range(1, self.max_attempts + 1)]
+
+
+for backoff in (FixedDelay(), ExponentialBackoff(), FullJitter()):
+    print(type(backoff).__name__, RetryingClient(backoff).schedule())`,
+      scala: `import scala.util.Random
+
+trait BackoffStrategy:
+  def delay(attempt: Int): Double
+
+class FixedDelay(seconds: Double = 1.0) extends BackoffStrategy:
+  def delay(attempt: Int): Double = seconds
+
+class ExponentialBackoff(base: Double = 0.5, cap: Double = 8.0) extends BackoffStrategy:
+  def delay(attempt: Int): Double = math.min(cap, base * math.pow(2, attempt - 1))
+
+class FullJitter(rng: Random = new Random(42)) extends ExponentialBackoff():
+  override def delay(attempt: Int): Double = rng.between(0.0, super.delay(attempt))
+
+class RetryingClient(backoff: BackoffStrategy, maxAttempts: Int = 5):
+  // a real client would Thread.sleep(delay) after each failed attempt
+  def schedule: List[Double] =
+    (1 to maxAttempts).map(a => math.round(backoff.delay(a) * 100) / 100.0).toList
+
+@main def retryDemo(): Unit =
+  for b <- List(FixedDelay(), ExponentialBackoff(), FullJitter()) do
+    println(s"\${b.getClass.getSimpleName} \${RetryingClient(b).schedule}")`,
+      widget: "retry"
+    }
+  ];
+
+  /* ---------- per-example animated diagram ---------- */
+  // One small class diagram per example: client -> context -> interface <- 3 strategies.
+  const STAGES = {
+    ride: {
+      client: "Rider app", context: "Ride", field: "- pricing", iface: "PricingStrategy", method: "+ fare(km, min)",
+      boxes: ["NormalPricing", "SurgePricing", "PoolPricing"], values: ["normal", "surge", "pool"], twist: null,
+      walk: [
+        { act: "build", text: "Ride holds one PricingStrategy. Three pricing rules implement it: normal, surge and pool." },
+        { act: "pick", v: "normal", text: "The rider app sets up the ride with NormalPricing." },
+        { act: "call", text: "Asking for a quote goes through the interface to NormalPricing, and the fare comes back." },
+        { act: "pickcall", v: "surge", text: "At peak time the app swaps in SurgePricing. The same quote call now returns a higher fare." },
+        { act: "pickcall", v: "pool", text: "For a shared ride it swaps in PoolPricing. The Ride class never changed." }
+      ]
+    },
+    sort: {
+      client: "Search page", context: "SearchResults", field: "- ordering", iface: "Ordering[Product]", method: "compare(a, b)",
+      boxes: ["PriceLowHigh", "TopRated", "Newest"], values: ["price", "rating", "newest"], twist: null,
+      walk: [
+        { act: "build", text: "SearchResults holds one Ordering. Each sort option is its own strategy." },
+        { act: "pick", v: "price", text: "The search page starts with PriceLowHigh." },
+        { act: "call", text: "Sorting asks the Ordering to compare products, and the results come back cheapest first." },
+        { act: "pickcall", v: "rating", text: "The shopper switches to TopRated. Same sort call, different order." },
+        { act: "pickcall", v: "newest", text: "Newest is just one more strategy. Adding best sellers later means adding one more, nothing else." }
+      ]
+    },
+    ship: {
+      client: "Checkout", context: "Order", field: "- shipping", iface: "ShippingStrategy", method: "+ cost(kg, total)",
+      boxes: ["StandardShipping", "ExpressShipping", "FreeAbove(₹499)"], values: ["standard", "express", "free"],
+      twist: { type: "fallback", label: "falls back to" },
+      walk: [
+        { act: "build", text: "Order holds one ShippingStrategy. Standard, express and free-above are three interchangeable rules." },
+        { act: "pickcall", v: "standard", text: "With StandardShipping, the cost call returns ₹40 plus ₹10 per kg." },
+        { act: "pickcall", v: "express", text: "Swap in ExpressShipping: same call, higher price." },
+        { act: "pickcall", v: "free", text: "With FreeAbove, an order of ₹650 is over the ₹499 threshold, so shipping is free." },
+        { act: "call", set: { total: 400 }, twist: true, text: "For a ₹400 order, FreeAbove passes the call on to StandardShipping. Strategies can be combined." }
+      ]
+    },
+    retry: {
+      client: "PaymentService", context: "RetryingClient", field: "- backoff", iface: "BackoffStrategy", method: "+ delay(attempt)",
+      boxes: ["FixedDelay", "ExponentialBackoff", "FullJitter"], values: ["fixed", "exp", "jitter"],
+      twist: { type: "extends", label: "extends" },
+      walk: [
+        { act: "build", text: "RetryingClient holds one BackoffStrategy. FullJitter extends ExponentialBackoff." },
+        { act: "pickcall", v: "fixed", text: "With FixedDelay, the third retry waits 1 second, like every other retry." },
+        { act: "pickcall", v: "exp", text: "With ExponentialBackoff, the wait doubles each time, so the third retry waits 2 seconds." },
+        { act: "pickcall", v: "jitter", twist: true, text: "FullJitter reuses the exponential wait and picks a random time below it, so thousands of clients don't retry at the same instant." }
+      ]
+    }
+  };
+
+  const MINI_W = 760;
+  const bx = (i) => 250 + 170 * i;                       // left edge of strategy box i
+  const P_C = [81, 103], P_X = [265, 96], P_I = [497.5, 112];
+  const P_B = (i) => [bx(i) + 77.5, 196];
+  const P_U = (i) => [bx(i) + 77.5, 288];
+
+  function el(tag, attrs, parent) {
+    const e = document.createElementNS(SVGNS, tag);
+    Object.keys(attrs).forEach((k) => e.setAttribute(k, String(attrs[k])));
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function txt(parent, x, y, str, cls) {
+    const t = el("text", { x, y, class: cls, "text-anchor": "middle" }, parent);
+    t.textContent = str;
+    return t;
+  }
+  function umlBox(parent, x, y, w, h, kind, title, sub) {
+    const g = el("g", {}, parent);
+    if (kind === "client") {
+      el("rect", { x, y, width: w, height: h, rx: 10, class: "frame-client" }, g);
+      txt(g, x + w / 2, y + 20, "«client»", "t small muted");
+      txt(g, x + w / 2, y + 40, title, "t name");
+      return g;
+    }
+    const band = kind === "iface" ? 40 : 28;
+    const bandCls = kind === "iface" ? "fill-iface-bg" : "fill-concrete-bg";
+    el("rect", { x, y, width: w, height: h, rx: 9, class: "fill-surface" }, g);
+    el("rect", { x, y, width: w, height: band, rx: 9, class: bandCls }, g);
+    el("rect", { x, y: y + band - 10, width: w, height: 10, class: bandCls }, g);
+    el("line", { x1: x, y1: y + band, x2: x + w, y2: y + band, class: kind === "iface" ? "stroke-iface" : "stroke-concrete" }, g);
+    el("rect", { x, y, width: w, height: h, rx: 9, class: kind === "concrete" ? "frame-concrete" : "frame-key" }, g);
+    if (kind === "iface") {
+      txt(g, x + w / 2, y + 16, "«interface»", "t small iface-ink");
+      txt(g, x + w / 2, y + 33, title, "t name");
+      txt(g, x + w / 2, y + band + 17, sub, "sub italic");
+    } else {
+      txt(g, x + w / 2, y + 19, title, "t name");
+      txt(g, x + w / 2, y + band + (h - band) / 2 + 4, sub, "sub");
+    }
+    return g;
+  }
+
+  function buildMiniStage(host, cfg) {
+    host.innerHTML = "";
+    const svg = el("svg", {
+      viewBox: "0 0 760 310", role: "img",
+      "aria-label": cfg.context + " holds a " + cfg.iface + "; implementations: " + cfg.boxes.join(", ")
+    }, host);
+    const real = el("g", {}, svg);
+    [0, 1, 2].forEach((i) => el("line", { x1: bx(i) + 77.5, y1: 210, x2: bx(i) + 77.5, y2: 185, class: "rel dashed" }, real));
+    el("line", { x1: 327.5, y1: 185, x2: 667.5, y2: 185, class: "rel dashed" }, real);
+    el("line", { x1: 497.5, y1: 185, x2: 497.5, y2: 100, class: "rel dashed" }, real);
+    el("polygon", { points: "489.5,100 505.5,100 497.5,87", class: "tri" }, real);
+    const assoc = el("g", {}, svg);
+    el("line", { x1: 350, y1: 128, x2: 386, y2: 72, class: "rel" }, assoc);
+    el("polyline", { points: "384.3,83.9 386,72 375.9,78.5", class: "rel" }, assoc);
+
+    const twist = el("g", {}, svg);
+    if (cfg.twist && cfg.twist.type === "fallback") {           // FreeAbove -> Standard
+      el("path", { d: "M667.5 260 V 284 H 327.5 V 262", class: "rel" }, twist);
+      el("polyline", { points: "321.5,272 327.5,261 333.5,272", class: "rel" }, twist);
+      txt(twist, 497.5, 304, cfg.twist.label, "t small muted");
+    } else if (cfg.twist && cfg.twist.type === "extends") {     // FullJitter -> ExponentialBackoff
+      el("path", { d: "M667.5 260 V 284 H 497.5 V 274", class: "rel" }, twist);
+      el("polygon", { points: "489.5,274 505.5,274 497.5,261", class: "tri" }, twist);
+      txt(twist, 582.5, 302, cfg.twist.label, "t small muted");
+    }
+
+    const client = umlBox(svg, 16, 115, 130, 54, "client", cfg.client);
+    const ctx = umlBox(svg, 180, 108, 170, 66, "context", cfg.context, cfg.field);
+    const iface = umlBox(svg, 387.5, 20, 220, 66, "iface", cfg.iface, cfg.method);
+    const boxes = [0, 1, 2].map((i) => umlBox(svg, bx(i), 210, 155, 50, "concrete", cfg.boxes[i], cfg.method));
+    const ring = el("rect", { x: bx(0) - 6, y: 204, width: 167, height: 62, rx: 12, class: "ring", opacity: 0 }, svg);
+    const tokens = el("g", {}, svg);
+    const all = [client, ctx, assoc, iface, real, ...boxes, twist];
+
+    function pill(label, isResult) {
+      const g = el("g", { class: "token" + (isResult ? " result" : ""), opacity: 0 }, tokens);
+      const r = el("rect", {}, g);
+      const t = el("text", { "text-anchor": "middle", y: 4 }, g);
+      t.textContent = label;
+      const w = Math.ceil(t.getComputedTextLength()) + 22;
+      ["x", "y", "width", "height", "rx"].forEach((k, j) => r.setAttribute(k, String([-w / 2, -13, w, 26, 13][j])));
+      g.dataset.w = String(w);
+      return g;
+    }
+    const cx = (g, x) => { const h = Number(g.dataset.w) / 2 + 4; return Math.min(Math.max(x, h), MINI_W - h); };
+    function move(g, pts, seg, hold) {
+      const t = gsap.timeline();
+      t.set(g, { x: cx(g, pts[0][0]), y: pts[0][1] });
+      t.to(g, { opacity: 1, duration: 0.18 });
+      for (let i = 1; i < pts.length; i++) t.to(g, { x: cx(g, pts[i][0]), y: pts[i][1], duration: seg, ease: "power1.inOut" });
+      t.to(g, { opacity: 0, duration: 0.25 }, "+=" + (hold || 0.2));
+      return t;
+    }
+
+    return {
+      all, ring,
+      clear() { tokens.innerHTML = ""; },
+      showAll(activeIndex) {
+        gsap.set(all, { opacity: 1 });
+        if (activeIndex >= 0) gsap.set(ring, { x: 170 * activeIndex, opacity: 1 });
+      },
+      tlBuild() {
+        gsap.set(all, { opacity: 0 });
+        gsap.set(ring, { opacity: 0 });
+        return gsap.timeline()
+          .to([client, ctx], { opacity: 1, duration: 0.4, stagger: 0.2 })
+          .to(iface, { opacity: 1, duration: 0.4 })
+          .to(assoc, { opacity: 1, duration: 0.3 })
+          .to(boxes, { opacity: 1, duration: 0.35, stagger: 0.18 })
+          .to(real, { opacity: 1, duration: 0.4 })
+          .to(twist, { opacity: 1, duration: 0.4 });
+      },
+      tlPick(i, label) {
+        const p = pill(label, false);
+        const visible = Number(gsap.getProperty(ring, "opacity")) > 0.5;
+        const t = gsap.timeline().add(move(p, [P_C, P_X], 0.5, 0.05));
+        if (visible) t.to(ring, { x: 170 * i, duration: 0.5, ease: "power2.inOut" }, "-=0.2");
+        else t.set(ring, { x: 170 * i }).to(ring, { opacity: 1, duration: 0.3 });
+        t.add(pulse(boxes[i]));
+        t.call(() => p.remove());
+        return t;
+      },
+      tlTwist() {
+        return gsap.timeline()
+          .to(twist, { opacity: 0.2, duration: 0.2, yoyo: true, repeat: 3 })
+          .set(twist, { opacity: 1 });
+      },
+      tlCall(i, callLabel, resultLabel, via) {
+        const path = [P_C, P_X, P_I, P_B(i)];
+        if (via !== null && via !== undefined) path.push(P_U(i), P_U(via), P_B(via));
+        const target = via !== null && via !== undefined ? via : i;
+        const c = pill(callLabel, false), r = pill(resultLabel, true);
+        return gsap.timeline()
+          .add(move(c, path, 0.42, 0.05))
+          .add(pulse(boxes[target]), "-=0.2")
+          .add(move(r, path.slice().reverse(), 0.38, 1.1))
+          .call(() => { c.remove(); r.remove(); });
+      }
+    };
+  }
+
+  /* ---------- real-world examples: widgets ---------- */
+  let exCurrent = 0;
+  let exStage = null, exApi = null, miniTl = null, walkToken = 0;
+  const rupees = (n) => "₹" + Math.round(n).toLocaleString("en-IN");
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  function chipsHtml(name, options, value) {
+    return '<div class="chips" role="group" aria-label="' + name + '">' +
+      options.map((o) => '<button type="button" class="chip" data-v="' + o.v + '" aria-pressed="' + (o.v === value) + '">' + o.label + "</button>").join("") +
+      "</div>";
+  }
+  function pressChip(box, v) {
+    box.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.v === v)));
+  }
+  function onChips(box, handler) {
+    box.querySelector(".chips").addEventListener("click", (e) => {
+      const b = e.target.closest(".chip");
+      if (!b) return;
+      pressChip(box, b.dataset.v);
+      handler(b.dataset.v);
+    });
+  }
+
+  // Each widget renders its controls and returns an API the animated diagram and walkthrough use.
+  const WIDGETS = {
+    ride(box, hooks) {
+      const st = { km: 8, min: 25, mult: 1.8, s: "normal" };
+      box.innerHTML =
+        "<h3>Try it</h3>" +
+        chipsHtml("Pricing strategy", [{ v: "normal", label: "NormalPricing" }, { v: "surge", label: "SurgePricing" }, { v: "pool", label: "PoolPricing" }], st.s) +
+        '<div class="slider"><label for="wKm">Distance: <output id="wKmOut">8 km</output></label><input type="range" id="wKm" min="1" max="30" value="8"></div>' +
+        '<div class="slider"><label for="wMin">Trip time: <output id="wMinOut">25 min</output></label><input type="range" id="wMin" min="5" max="90" step="5" value="25"></div>' +
+        '<div class="slider"><label for="wMult">Surge multiplier</label><select id="wMult"><option>1.2</option><option>1.5</option><option selected>1.8</option><option>2.5</option></select></div>' +
+        '<div class="result" aria-live="polite"><span class="big-num" id="wFare"></span><span class="formula" id="wFormula"></span></div>';
+      const normal = () => 50 + 12 * st.km + 1.5 * st.min;
+      const fare = () => st.s === "surge" ? normal() * st.mult : st.s === "pool" ? normal() * 0.7 : normal();
+      const update = () => {
+        $("wKmOut").textContent = st.km + " km";
+        $("wMinOut").textContent = st.min + " min";
+        $("wFare").textContent = rupees(fare());
+        $("wFormula").textContent = st.s === "normal"
+          ? "₹50 base + ₹12 × " + st.km + " km + ₹1.5 × " + st.min + " min"
+          : st.s === "surge" ? "normal fare " + rupees(normal()) + " × " + st.mult + " surge"
+          : "normal fare " + rupees(normal()) + " × 0.7 shared-ride discount";
+      };
+      const select = (v) => { st.s = v; pressChip(box, v); update(); };
+      onChips(box, (v) => { st.s = v; update(); hooks.pick(v); });
+      $("wKm").addEventListener("input", (e) => { st.km = Number(e.target.value); update(); });
+      $("wMin").addEventListener("input", (e) => { st.min = Number(e.target.value); update(); });
+      $("wKm").addEventListener("change", hooks.changed);
+      $("wMin").addEventListener("change", hooks.changed);
+      $("wMult").addEventListener("change", (e) => { st.mult = Number(e.target.value); update(); hooks.changed(); });
+      update();
+      return {
+        current: () => st.s, select, set() {},
+        reset() { st.km = 8; st.min = 25; st.mult = 1.8; $("wKm").value = "8"; $("wMin").value = "25"; $("wMult").value = "1.8"; select("normal"); },
+        call: () => "quote(" + st.km + " km, " + st.min + " min)",
+        result: () => rupees(fare()),
+        via: () => null
+      };
+    },
+    sort(box, hooks) {
+      const products = [
+        { name: "Kettle", price: 1499, rating: 4.2, days: 30 },
+        { name: "Toaster", price: 999, rating: 4.6, days: 5 },
+        { name: "Mixer", price: 2999, rating: 4.4, days: 12 }
+      ];
+      const rules = {
+        price: (a, b) => a.price - b.price,
+        rating: (a, b) => b.rating - a.rating,
+        newest: (a, b) => a.days - b.days
+      };
+      const st = { s: "price", order: [] };
+      box.innerHTML =
+        "<h3>Try it</h3>" +
+        chipsHtml("Sort strategy", [{ v: "price", label: "Price: low to high" }, { v: "rating", label: "Top rated" }, { v: "newest", label: "Newest" }], st.s) +
+        '<div class="sort-list" aria-live="polite">' +
+        products.map((p, i) =>
+          '<div class="sort-item" data-i="' + i + '"><span class="pos"></span><span class="nm">' + p.name + '</span><span class="meta">' +
+          rupees(p.price) + " · ★ " + p.rating + " · " + p.days + " days ago</span></div>").join("") +
+        "</div>";
+      const items = Array.from(box.querySelectorAll(".sort-item"));
+      const apply = () => {
+        st.order = products.map((p, i) => i).sort((x, y) => rules[st.s](products[x], products[y]));
+        st.order.forEach((pi, rank) => {
+          items[pi].style.transform = "translateY(" + rank * 62 + "px)";
+          items[pi].querySelector(".pos").textContent = rank + 1;
+        });
+      };
+      const select = (v) => { st.s = v; pressChip(box, v); apply(); };
+      onChips(box, (v) => { st.s = v; apply(); hooks.pick(v); });
+      apply();
+      return {
+        current: () => st.s, select, set() {},
+        reset() { select("price"); },
+        call: () => "sort(results)",
+        result: () => st.order.map((i) => products[i].name).join(", "),
+        via: () => null
+      };
+    },
+    ship(box, hooks) {
+      const st = { total: 650, kg: 2, s: "standard" };
+      box.innerHTML =
+        "<h3>Try it</h3>" +
+        chipsHtml("Shipping strategy", [{ v: "standard", label: "StandardShipping" }, { v: "express", label: "ExpressShipping" }, { v: "free", label: "FreeAbove(₹499)" }], st.s) +
+        '<div class="slider"><label for="wTotal">Order value: <output id="wTotalOut"></output></label><input type="range" id="wTotal" min="100" max="2000" step="50" value="650"></div>' +
+        '<div class="slider"><label for="wKg">Weight: <output id="wKgOut"></output></label><input type="range" id="wKg" min="0.5" max="10" step="0.5" value="2"></div>' +
+        '<div class="result" aria-live="polite"><span class="big-num" id="wGrand"></span><span class="formula" id="wShipNote"></span></div>';
+      const standard = () => 40 + 10 * st.kg;
+      const shipping = () => st.s === "express" ? 120 + 25 * st.kg : st.s === "free" && st.total >= 499 ? 0 : standard();
+      const update = () => {
+        const note = st.s === "express" ? "₹120 + ₹25 × " + st.kg + " kg"
+          : st.s === "free" && st.total >= 499 ? "free: order is at least ₹499"
+          : st.s === "free" ? "below ₹499, so it falls back to Standard"
+          : "₹40 + ₹10 × " + st.kg + " kg";
+        $("wTotalOut").textContent = rupees(st.total);
+        $("wKgOut").textContent = st.kg + " kg";
+        $("wGrand").textContent = rupees(st.total + shipping());
+        $("wShipNote").textContent = "shipping " + rupees(shipping()) + " (" + note + ")";
+      };
+      const select = (v) => { st.s = v; pressChip(box, v); update(); };
+      onChips(box, (v) => { st.s = v; update(); hooks.pick(v); });
+      $("wTotal").addEventListener("input", (e) => { st.total = Number(e.target.value); update(); });
+      $("wKg").addEventListener("input", (e) => { st.kg = Number(e.target.value); update(); });
+      $("wTotal").addEventListener("change", hooks.changed);
+      $("wKg").addEventListener("change", hooks.changed);
+      update();
+      return {
+        current: () => st.s, select,
+        set(o) { if (o.total != null) { st.total = o.total; $("wTotal").value = String(o.total); } update(); },
+        reset() { st.total = 650; st.kg = 2; $("wTotal").value = "650"; $("wKg").value = "2"; select("standard"); },
+        call: () => "cost(" + st.kg + " kg, " + rupees(st.total) + ")",
+        result: () => rupees(shipping()),
+        via: () => (st.s === "free" && st.total < 499 ? 0 : null)
+      };
+    },
+    retry(box, hooks) {
+      const st = { s: "exp", delays: [] };
+      box.innerHTML =
+        "<h3>Try it</h3>" +
+        chipsHtml("Back-off strategy", [{ v: "fixed", label: "FixedDelay" }, { v: "exp", label: "ExponentialBackoff" }, { v: "jitter", label: "FullJitter" }], st.s) +
+        '<div class="bars" id="wBars" role="img" aria-label="Wait before each retry"></div>' +
+        '<div class="result"><span class="formula" id="wRetryNote"></span>' +
+        '<button type="button" class="btn" id="wRoll" hidden>Roll the dice again</button></div>';
+      const bars = $("wBars");
+      bars.innerHTML = [1, 2, 3, 4, 5].map((a) =>
+        '<div class="bar-col"><span class="bar-val"></span><div class="bar"></div><span class="bar-lbl">retry ' + a + "</span></div>").join("");
+      const exp = (a) => Math.min(8, 0.5 * Math.pow(2, a - 1));
+      const update = () => {
+        st.delays = [1, 2, 3, 4, 5].map((a) => st.s === "fixed" ? 1 : st.s === "exp" ? exp(a) : Math.random() * exp(a));
+        bars.querySelectorAll(".bar-col").forEach((col, i) => {
+          col.querySelector(".bar").style.height = Math.max(2, (st.delays[i] / 8) * 130) + "px";
+          col.querySelector(".bar-val").textContent = st.delays[i].toFixed(2) + " s";
+        });
+        bars.setAttribute("aria-label", "Wait before each retry: " + st.delays.map((d) => d.toFixed(2) + " seconds").join(", "));
+        $("wRetryNote").textContent = st.s === "fixed" ? "Always wait 1 s."
+          : st.s === "exp" ? "Double the wait each time, capped at 8 s."
+          : "Random wait between 0 and the exponential value.";
+        $("wRoll").hidden = st.s !== "jitter";
+      };
+      const select = (v) => { st.s = v; pressChip(box, v); update(); };
+      onChips(box, (v) => { st.s = v; update(); hooks.pick(v); });
+      $("wRoll").addEventListener("click", () => { update(); hooks.changed(); });
+      update();
+      return {
+        current: () => st.s, select, set() {},
+        reset() { select("fixed"); },
+        call: () => "delay(retry 3)",
+        result: () => st.delays[2].toFixed(2) + " s",
+        via: () => null
+      };
+    }
+  };
+
+  /* ---------- real-world examples: animation control ---------- */
+  function playMini(tl) {
+    // finish the previous animation instantly so it removes its own pills, then start the new one
+    if (miniTl && miniTl !== tl) { miniTl.progress(1); miniTl.kill(); }
+    miniTl = tl;
+    tl.timeScale(speed);
+    return new Promise((resolve) => {
+      if (reduceMotion) { tl.progress(1); resolve(); return; }
+      tl.eventCallback("onComplete", () => resolve());
+      tl.play();
+    });
+  }
+  function speakText(text) {
+    return new Promise((resolve) => {
+      if (!voiceOn || !synth) { resolve(); return; }
+      stopSpeech();
+      const token = speechToken;
+      const spoken = text.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/₹\s?([\d,]+)/g, "$1 rupees");
+      const parts = sentences(spoken);
+      const safety = setTimeout(resolve, Math.max(4000, spoken.length * 110 / speed));
+      setTimeout(() => {
+        if (token !== speechToken) { clearTimeout(safety); resolve(); return; }
+        parts.forEach((p, i) => {
+          const u = new SpeechSynthesisUtterance(p);
+          if (chosenVoice) { u.voice = chosenVoice; u.lang = chosenVoice.lang; } else { u.lang = "en-US"; }
+          u.rate = Math.min(2, Math.max(0.5, speed));
+          if (i === parts.length - 1) u.onend = u.onerror = () => { clearTimeout(safety); resolve(); };
+          synth.speak(u);
+        });
+      }, 80);
+    });
+  }
+  function setCap(text, n, total) {
+    $("miniCap").innerHTML = (n ? '<span class="k">Step ' + n + " of " + total + "</span>" : "") + escapeHtml(text);
+  }
+  function setWalkBtn(running) {
+    const b = $("miniWalk");
+    if (b) b.textContent = running ? "Stop walkthrough" : "Watch walkthrough";
+  }
+  function cancelWalk() {
+    walkToken++;
+    setWalkBtn(false);
+    stopSpeech();
+    if (miniTl) { miniTl.progress(1); miniTl.kill(); miniTl = null; }
+    if (exStage) { exStage.clear(); gsap.set(exStage.all, { opacity: 1 }); }
+  }
+  const stageIndex = (v) => STAGES[EXAMPLES[exCurrent].id].values.indexOf(v);
+
+  async function runWalkthrough() {
+    const token = ++walkToken;
+    const cfg = STAGES[EXAMPLES[exCurrent].id];
+    setWalkBtn(true);
+    exApi.reset();
+    for (let s = 0; s < cfg.walk.length; s++) {
+      if (token !== walkToken) return;
+      const step = cfg.walk[s];
+      setCap(step.text, s + 1, cfg.walk.length);
+      const tl = gsap.timeline({ paused: true });
+      if (step.act === "build") {
+        tl.add(exStage.tlBuild());
+      } else {
+        if (step.set) exApi.set(step.set);
+        if (step.v) exApi.select(step.v);
+        const i = stageIndex(exApi.current());
+        if (step.act === "pick" || step.act === "pickcall") tl.add(exStage.tlPick(i, "use " + cfg.boxes[i]));
+        if (step.twist) tl.add(exStage.tlTwist());
+        if (step.act === "call" || step.act === "pickcall") tl.add(exStage.tlCall(i, exApi.call(), exApi.result(), exApi.via()));
+      }
+      await Promise.all([playMini(tl), speakText(step.text)]);
+      if (token !== walkToken) return;
+      await sleep(voiceOn ? 500 : 1400 / speed);
+    }
+    if (token === walkToken) {
+      setWalkBtn(false);
+      setCap("Done. Now pick the strategies yourself in Try it below and watch each call travel.");
+    }
+  }
+
+  const exHooks = {
+    pick(v) {
+      cancelWalk();
+      const cfg = STAGES[EXAMPLES[exCurrent].id];
+      const i = stageIndex(v);
+      const tl = gsap.timeline({ paused: true })
+        .add(exStage.tlPick(i, "use " + cfg.boxes[i]))
+        .add(exStage.tlCall(i, exApi.call(), exApi.result(), exApi.via()));
+      setCap(cfg.client + " switched " + cfg.context + " to " + cfg.boxes[i] + ". The same call now returns " + exApi.result() + ".");
+      playMini(tl);
+    },
+    changed() {
+      cancelWalk();
+      const cfg = STAGES[EXAMPLES[exCurrent].id];
+      const i = stageIndex(exApi.current());
+      setCap("Same strategy (" + cfg.boxes[i] + "), new input: the call returns " + exApi.result() + ".");
+      playMini(gsap.timeline({ paused: true }).add(exStage.tlCall(i, exApi.call(), exApi.result(), exApi.via())));
+    }
+  };
+
+  function renderExamplePicker() {
+    const picker = $("exPicker");
+    picker.innerHTML = EXAMPLES.map((ex, i) =>
+      '<button type="button" class="ex-card" role="tab" id="exTab' + i + '" aria-selected="' + (i === exCurrent) + '"' +
+      (i === exCurrent ? "" : ' tabindex="-1"') + ' aria-controls="exBody">' +
+      '<span class="dom">' + ex.domain + '</span><span class="ttl">' + ex.title + "</span></button>").join("");
+  }
+  function renderExampleCode() {
+    const ex = EXAMPLES[exCurrent];
+    const lines = ex[lang].split("\n");
+    const colored = highlightLines(lines, lang);
+    $("exCode").innerHTML = lines.map((l, i) =>
+      '<span class="ln"><span class="n">' + (i + 1) + "</span>" + (colored[i] || " ") + "</span>").join("");
+    $("exCode").scrollTop = 0;
+  }
+  const SPEAKER_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>';
+
+  function renderExample() {
+    cancelWalk();
+    const ex = EXAMPLES[exCurrent];
+    renderExamplePicker();
+    $("exBody").setAttribute("aria-labelledby", "exTab" + exCurrent);
+    $("exBody").innerHTML =
+      "<h2>" + ex.title + "</h2>" +
+      "<div><h3>The situation</h3><p>" + ex.situation + "</p></div>" +
+      '<div class="mini" id="miniStage"></div>' +
+      '<div class="mini-bar"><div class="mini-cap" id="miniCap" aria-live="polite"></div>' +
+      '<button class="btn primary" id="miniWalk" type="button">Watch walkthrough</button>' +
+      '<button class="btn voice-toggle" id="miniVoice" type="button" aria-pressed="' + voiceOn + '">' + SPEAKER_ICON +
+      '<span class="vlabel">' + (voiceOn ? "Voice-over on" : "Voice-over off") + "</span></button></div>" +
+      '<div class="try" id="tryBox"></div>' +
+      '<div><h3>The strategies</h3><div class="tags"><span class="tag iface">' + ex.iface + "</span>" +
+      ex.strategies.map((s) => '<span class="tag">' + s + "</span>").join("") + "</div></div>" +
+      "<div><h3>Why Strategy fits</h3><p>" + ex.why + "</p></div>" +
+      '<p class="watch"><strong>Good to know:</strong> ' + ex.watch + "</p>";
+    exStage = buildMiniStage($("miniStage"), STAGES[ex.id]);
+    exApi = WIDGETS[ex.widget]($("tryBox"), exHooks);
+    exStage.showAll(stageIndex(exApi.current()));
+    setCap("Pick a strategy in Try it to watch the call travel, or watch the walkthrough.");
+    $("miniWalk").addEventListener("click", () => {
+      if ($("miniWalk").textContent.startsWith("Stop")) { cancelWalk(); setCap("Walkthrough stopped."); }
+      else runWalkthrough();
+    });
+    if (synth) $("miniVoice").addEventListener("click", () => setVoice(!voiceOn));
+    else $("miniVoice").disabled = true;
+    renderExampleCode();
+  }
+  function selectExample(i) {
+    exCurrent = (i + EXAMPLES.length) % EXAMPLES.length;
+    renderExample();
+    $("exTab" + exCurrent).focus();
+  }
+
+  let view = "story";
+  function setView(v) {
+    view = v;
+    const story = v === "story";
+    $("viewStory").setAttribute("aria-selected", String(story));
+    $("viewExamples").setAttribute("aria-selected", String(!story));
+    $("viewStory").tabIndex = story ? 0 : -1;
+    $("viewExamples").tabIndex = story ? -1 : 0;
+    $("storyPanel").hidden = !story;
+    $("examplesPanel").hidden = story;
+    if (story) cancelWalk();
+    else { stopAutoplay(); renderExample(); }
+  }
+
+  /* ---------- wiring ---------- */
+  function wire() {
+    const dots = $("dots");
+    STEPS.forEach((s, i) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "dot";
+      b.setAttribute("aria-label", "Step " + (i + 1) + ": " + s.title);
+      b.addEventListener("click", () => goStep(i + 1));
+      dots.appendChild(b);
+    });
+    $("prev").addEventListener("click", () => goStep(current - 1));
+    $("next").addEventListener("click", () => goStep(current + 1));
+    $("replay").addEventListener("click", () => goStep(current));
+    $("play").addEventListener("click", togglePlay);
+    $("speed").addEventListener("change", (e) => {
+      speed = Number(e.target.value);
+      tl.timeScale(speed);
+    });
+
+    if (synth) {
+      loadVoices();
+      synth.addEventListener ? synth.addEventListener("voiceschanged", loadVoices) : (synth.onvoiceschanged = loadVoices);
+      $("voiceBtn").addEventListener("click", () => setVoice(!voiceOn));
+      $("voiceSelect").addEventListener("change", (e) => {
+        chosenVoice = voices[Number(e.target.value)] || null;
+        if (voiceOn) speakStep(current);
+      });
+      window.addEventListener("pagehide", () => synth.cancel());
+    } else {
+      $("voiceBtn").disabled = true;
+      $("voiceNote").hidden = false;
+      $("voiceNote").textContent = "This browser has no built-in speech, so voice-over is unavailable here.";
+    }
+    const setLang = (l) => {
+      lang = l;
+      document.querySelectorAll("[data-lang]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.lang === l)));
+      renderCode(false);
+      if (view === "examples") renderExampleCode();
+    };
+    document.querySelectorAll("[data-lang]").forEach((b) => b.addEventListener("click", () => setLang(b.dataset.lang)));
+
+    $("viewStory").addEventListener("click", () => setView("story"));
+    $("viewExamples").addEventListener("click", () => setView("examples"));
+    $("exPicker").addEventListener("click", (e) => {
+      const b = e.target.closest(".ex-card");
+      if (b) selectExample(Number(b.id.replace("exTab", "")));
+    });
+    $("exPicker").addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); selectExample(exCurrent + 1); }
+      else if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); selectExample(exCurrent - 1); }
+    });
+    document.addEventListener("keydown", (e) => {
+      const tag = (e.target && e.target.tagName) || "";
+      if (view !== "story") return;
+      if (tag === "SELECT" || tag === "INPUT" || tag === "TEXTAREA") return;
+      if (e.key === "ArrowRight") { e.preventDefault(); goStep(current + 1); }
+      else if (e.key === "ArrowLeft") { e.preventDefault(); goStep(current - 1); }
+      else if (e.key === " " && tag !== "BUTTON") { e.preventDefault(); togglePlay(); }
+    });
+  }
+
+  function start() {
+    if (!window.gsap) {
+      $("stepTitle").textContent = "The animation library could not load. Check your connection and reload the page.";
+      return;
+    }
+    buildTimeline();
+    wire();
+    tl.pause(0);
+    onTick();
+    playUntil(endOf(1));
+  }
+
+  const fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+  Promise.race([fontsReady, new Promise((r) => setTimeout(r, 1500))]).then(start);
+})();
+</script>
+</body>
+</html>

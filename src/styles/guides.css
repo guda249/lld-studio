@@ -1,0 +1,87 @@
+/* UML Basics lessons, notation lab, OOP & SOLID primer, anti-patterns */
+.flow-stage { display: flex; justify-content: center; padding: 16px; overflow-x: auto; }
+.flow-diagram { width: 100%; height: auto; }
+.flow-diagram .fd-el { transition: opacity .35s ease; }
+.flow-diagram .fd-hidden { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .flow-diagram .fd-el { transition: none; } }
+.flow-diagram .fd-box { fill: var(--uml-concrete-bg); stroke: var(--uml-concrete); stroke-width: 2; }
+.flow-diagram .fd-decision { fill: var(--surface); stroke: var(--ink); }
+.flow-diagram .fd-usecase { fill: var(--uml-iface-bg); stroke: var(--uml-iface); }
+.flow-diagram .fd-boundary { fill: none; stroke: var(--muted); stroke-width: 1.5; }
+.flow-diagram .fd-note { fill: var(--uml-enum-bg); stroke: var(--uml-enum); stroke-width: 1.5; }
+.flow-diagram .fd-solid { fill: var(--ink); }
+.flow-diagram .fd-ring { fill: var(--surface); stroke: var(--ink); stroke-width: 2; }
+.flow-diagram .fd-actor circle, .flow-diagram .fd-actor line { fill: none; stroke: var(--ink); stroke-width: 2; }
+.flow-diagram .fd-line { fill: none; stroke: var(--ink); stroke-width: 1.8; }
+.flow-diagram .fd-dashed { stroke-dasharray: 6 4; }
+.flow-diagram .fd-arrowhead { fill: none; stroke: var(--ink); stroke-width: 1.8; }
+.flow-diagram .fd-text { font: 600 13px var(--font); fill: var(--ink); }
+.flow-diagram .fd-bold { font-weight: 700; }
+.flow-diagram .fd-underline { text-decoration: underline; }
+.flow-diagram .fd-small { font: 12px var(--mono); fill: var(--ink); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+.flow-diagram .fd-active .fd-box, .flow-diagram .fd-active .fd-usecase { stroke: var(--uml-key); stroke-width: 3; }
+.flow-diagram .fd-active .fd-line { stroke: var(--uml-key); stroke-width: 2.6; }
+
+/* lesson player */
+.concept-tab .notation-badge, .glyph-text { font-family: var(--mono); font-size: 12px; padding: 2px 6px; border-radius: 6px; background: var(--bg); border: 1px solid var(--line); white-space: nowrap; }
+.scene-say { min-height: 3.2em; margin: 0; font-size: 16px; line-height: 1.5; }
+.scene-steps { display: flex; gap: 6px; }
+.scene-steps span { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+.scene-steps span.on { background: var(--accent); }
+.lesson-nav { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; }
+
+/* UML index */
+.lesson-index { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.lesson-index a { display: flex; flex-direction: column; gap: 6px; height: 100%; text-decoration: none; color: var(--ink); }
+.lesson-index .num { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+.lesson-index .ttl { font-size: 17px; font-weight: 700; }
+.lesson-index .seen { color: var(--ok); font-weight: 600; font-size: 13px; }
+
+/* notation lab */
+.notation-lab { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .notation-lab { grid-template-columns: minmax(0, 1fr); } }
+.symbol-group h2 { font-size: 16px; margin: 0 0 8px; color: var(--muted); }
+.symbol-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-bottom: 18px; }
+.symbol-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-height: 76px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-align: left; cursor: pointer; font: inherit; }
+.symbol-btn[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.symbol-btn .sym-name { font-size: 14px; font-weight: 600; }
+.symbol-detail { position: sticky; top: 12px; display: flex; flex-direction: column; gap: 12px; }
+.mini-box { display: inline-flex; align-items: center; justify-content: center; min-width: 64px; height: 26px; padding: 0 8px; border-radius: 6px; border: 2px solid; font-size: 12px; font-weight: 600; }
+.mini-box.interface { border-color: var(--uml-iface); background: var(--uml-iface-bg); }
+.mini-box.abstract { border-color: var(--uml-abstract); background: var(--uml-abstract-bg); font-style: italic; }
+.mini-box.concrete { border-color: var(--uml-concrete); background: var(--uml-concrete-bg); }
+.mini-box.singleton { border-color: var(--uml-object); background: var(--uml-object-bg); }
+.mini-box.enum { border-color: var(--uml-enum); background: var(--uml-enum-bg); }
+
+/* guides (SOLID, anti-patterns) */
+.guide-body { display: flex; flex-direction: column; gap: 20px; max-width: 980px; }
+.guide-body .gtext { margin: 0; font-size: 16px; line-height: 1.65; max-width: 75ch; }
+.guide-body code, .scene-say code, .rel-narration code { font-family: var(--mono); font-size: .92em; background: var(--bg); padding: 1px 5px; border-radius: 5px; }
+.callout { border-radius: var(--radius); padding: 14px 18px; border: 1px solid var(--line); background: var(--surface); }
+.callout.tip { border-left: 4px solid var(--ok); }
+.callout.warn { border-left: 4px solid var(--warn); }
+.callout h3 { margin: 0 0 6px; font-size: 16px; }
+.callout p { margin: 0; line-height: 1.55; }
+.before-after { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.before-after > .card { display: flex; flex-direction: column; gap: 10px; min-width: 0; border-top-width: 4px; }
+.before-after .before { border-top-color: var(--warn); }
+.before-after .after { border-top-color: var(--ok); }
+.before-after h3 { margin: 0; }
+
+/* draw-your-first-diagram */
+.draw-check .findings { margin: 0; }
+
+/* search */
+.search-box { display: flex; gap: 8px; }
+.search-box input { flex: 1; height: 48px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 0 14px; font: inherit; font-size: 17px; }
+.search-results { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.search-results a { display: flex; flex-direction: column; gap: 3px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); text-decoration: none; color: var(--ink); }
+.search-results a:hover, .search-results a:focus-visible { border-color: var(--accent); }
+.search-results .kind { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.search-results mark { background: var(--accent-soft); color: inherit; border-radius: 3px; }
+
+/* diagram export */
+.export-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.export-row .btn { height: 36px; font-size: 13px; padding: 0 12px; }
+.block-h { margin: 0 0 8px; font-size: 19px; }
+.callout .block-h { font-size: 16px; margin: 0 0 6px; }

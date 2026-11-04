@@ -1,0 +1,15 @@
+# Cloudflare Pages response headers. https://developers.cloudflare.com/pages/configuration/headers/
+# The Content-Security-Policy only allows this site's own files, plus sending feedback to the Google Form.
+# If you add anything that loads from or sends to another site (for example Cloudflare Web Analytics),
+# add that site here too, or the browser will block it.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://docs.google.com; form-action 'self' https://docs.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()
+  Cross-Origin-Opener-Policy: same-origin
+
+# File names in /assets change whenever their content changes, so browsers may keep them for a year.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

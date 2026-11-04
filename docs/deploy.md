@@ -23,6 +23,12 @@ What the build sets up for Cloudflare:
 - **`SITE_URL`** makes the link-preview tags (WhatsApp, LinkedIn, Slack) and the canonical link absolute, and
   writes `sitemap.xml` (and its line in `robots.txt`). Without it the site still works; previews may lack the image.
 
+- **AI crawlers**: `robots.txt` asks AI-training and AI-answer crawlers (GPTBot, ClaudeBot, CCBot, Google-Extended,
+  PerplexityBot, Bytespider and others) to stay away, while search engines stay allowed. Bots that ignore
+  `robots.txt` are only stopped by Cloudflare: in the dashboard for your domain or Pages project, turn on
+  **Security → Bots → "Block AI bots"** (free plan). A page that browsers can show can never be fully protected
+  from copying; the content licence (CC BY-NC-SA 4.0) is what forbids commercial reuse.
+
 Check it locally the way Cloudflare will serve it (headers, deep links):
 `npm run build`, then `node devtools/csp-check.mjs` (cloud dev tools) or `npm run preview`.
 

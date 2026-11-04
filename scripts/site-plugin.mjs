@@ -41,6 +41,17 @@ export function licencesPlugin() {
 
 /* ---------- website only: absolute preview links, sitemap, robots, no prototypes ---------- */
 
+// Crawlers that collect pages for AI training or AI answers. Search engines (Google, Bing, DuckDuckGo…) stay
+// allowed so learners can find the site. robots.txt is a request that well-behaved bots follow; Cloudflare's
+// free "Block AI bots" switch enforces it (see docs/deploy.md).
+const AI_CRAWLERS = [
+  "GPTBot", "ChatGPT-User", "OAI-SearchBot", "ClaudeBot", "Claude-Web", "Claude-SearchBot", "Claude-User", "anthropic-ai",
+  "Google-Extended", "Applebot-Extended", "CCBot", "PerplexityBot", "Perplexity-User", "Bytespider", "Amazonbot",
+  "meta-externalagent", "meta-externalfetcher", "FacebookBot", "cohere-ai", "cohere-training-data-crawler", "Diffbot",
+  "AI2Bot", "Ai2Bot-Dolma", "YouBot", "DuckAssistBot", "ImagesiftBot", "Omgilibot", "Omgili", "Timpibot",
+  "Webzio-Extended", "Kangaroo Bot", "PanguBot", "MistralAI-User", "img2dataset"
+];
+
 const ls = (dir) => (existsSync(dir) ? readdirSync(dir).filter((x) => !x.startsWith(".") && x !== "code").map((x) => x.replace(/\.ts$/, "")) : []);
 
 export function routes(root = process.cwd()) {
@@ -84,7 +95,13 @@ export function sitePlugin() {
       const index = join(outDir, "index.html");
       writeFileSync(index, readFileSync(index, "utf8").replace(/<!--[\s\S]*?-->/g, "").replace(/>\s+</g, "><").trim() + "\n");
       const url = siteUrl();
-      const robots = ["User-agent: *", "Allow: /", url ? `Sitemap: ${url}/sitemap.xml` : ""].filter(Boolean).join("\n") + "\n";
+      const robots = [
+        "# LLD Studio content is CC BY-NC-SA 4.0: no AI training or commercial reuse. Search engines are welcome.",
+        "",
+        ...AI_CRAWLERS.map((b) => `User-agent: ${b}`), "Disallow: /", "",
+        "User-agent: *", "Allow: /",
+        url ? `\nSitemap: ${url}/sitemap.xml` : ""
+      ].filter((l, i, a) => l !== "" || a[i - 1] !== "").join("\n").trim() + "\n";
       writeFileSync(join(outDir, "robots.txt"), robots);
       if (url) {
         const body = routes().map((r) => `  <url><loc>${url}/${r}</loc></url>`).join("\n");

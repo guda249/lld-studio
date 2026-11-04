@@ -1,0 +1,13 @@
+// Cloudflare Workers settings (static site only, no Worker code).
+// Docs: https://developers.cloudflare.com/workers/static-assets/
+{
+  "name": "lld-studio",
+  "compatibility_date": "2026-11-04",
+  "assets": {
+    // the website build (npm run build); its _headers file sets the security headers
+    "directory": "./dist/",
+    // any address that isn't a file (e.g. /patterns/strategy) gets index.html, and the app shows the right page
+    "not_found_handling": "single-page-application"
+  },
+  "workers_dev": true
+}
